@@ -24,14 +24,26 @@ from config import settings
 from auth import require_role
 import os
 from fastapi.staticfiles import StaticFiles
+
+# Role-based access dependencies
+counter_access = require_role(["counter", "admin"])
 # Initialize FastAPI app
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
     description="Personalized Queue Management System"
 )
+
+# ================= CORS MIDDLEWARE =================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 # ================= STATIC FILES =================
-# Serve the entire web_portals folder at /web
 app.mount("/web", StaticFiles(directory="web_portals"), name="web")
 
 # ================= ROUTES =================
@@ -50,7 +62,14 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.utcnow()}
+# --------------------------------------------------------
 
+@app.get("/status")
+async def server_status():
+    """
+    Endpoint for demo_dashboard.html to check if server is online
+    """
+    return {"server": "online"}
 
 # ==================== KIOSK ENDPOINTS ====================
 
@@ -851,7 +870,6 @@ async def get_waiting_tickets(db: Session = Depends(get_db)):
     ).order_by(Ticket.created_at).all()
 
     service_type_map = {
-        # Civil Registration & Identification
         ServiceType.KEBELE_ID: "Obtaining Kebele ID",
         ServiceType.BIRTH_CERTIFICATE: "Birth Registration Certificate",
         ServiceType.FAYDA_ID: "National ID (Fayda)",

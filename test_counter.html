@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter Test - Quick Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        #ticketDisplay {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            padding: 30px;
+            display: none;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        #console {
+            background: #2d2d2d;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🧪 Counter Test - CALL NEXT PERSON Fix</h1>
+        <p>This is a simplified test to diagnose the issue.</p>
+
+        <button onclick="testHealth()">1️⃣ Test Server Health</button>
+        <button onclick="testCallNext()">2️⃣ Call Next Person (API Test)</button>
+        <button onclick="openCounterPortal()">3️⃣ Open Real Counter Portal</button>
+
+        <div id="result" class="result"></div>
+
+        <div id="ticketDisplay"></div>
+
+        <div id="console">
+            <strong>Console Log:</strong><br>
+            Waiting for actions...
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+
+        function log(message, color = '#0f0') {
+            const console = document.getElementById('console');
+            const time = new Date().toLocaleTimeString();
+            console.innerHTML += `<br><span style="color: ${color}">[${time}] ${message}</span>`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.textContent = message;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+        }
+
+        async function testHealth() {
+            log('Testing server health...', '#fff');
+            showResult('Checking server...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                log(`✅ Server is healthy! Status: ${data.status}`, '#0f0');
+                showResult(`✅ Server is running! Status: ${data.status}`, 'success');
+            } catch (error) {
+                log(`❌ Server error: ${error.message}`, '#f00');
+                showResult(`❌ Server is NOT running! Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCallNext() {
+            log('Calling next ticket...', '#fff');
+            showResult('Calling next person...', 'info');
+
+            try {
+                const url = `${API_BASE}/api/counters/1/call-next`;
+                log(`📡 POST ${url}`, '#ff0');
+
+                const response = await fetch(url, {
+                    method: 'POST'
+                });
+
+                log(`📥 Response status: ${response.status}`, '#0ff');
+
+                const data = await response.json();
+                log(`📥 Response data: ${JSON.stringify(data)}`, '#0ff');
+
+                if (response.ok) {
+                    if (data.ticket_number) {
+                        log(`✅ SUCCESS! Ticket: ${data.ticket_number} - ${data.full_name}`, '#0f0');
+                        showResult(`✅ Now Serving: ${data.ticket_number} - ${data.full_name}`, 'success');
+
+                        const ticketDisplay = document.getElementById('ticketDisplay');
+                        ticketDisplay.innerHTML = `
+                            NOW SERVING:<br>
+                            ${data.ticket_number}<br>
+                            <span style="font-size: 24px;">${data.full_name}</span>
+                        `;
+                        ticketDisplay.style.display = 'block';
+                    } else {
+                        log('⚠️ No tickets in queue', '#ff0');
+                        showResult('ℹ️ No tickets waiting in queue', 'info');
+                    }
+                } else {
+                    log(`❌ API Error: ${data.detail}`, '#f00');
+                    showResult(`❌ Error: ${data.detail}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Network error: ${error.message}`, '#f00');
+                showResult(`❌ Cannot connect: ${error.message}`, 'error');
+            }
+        }
+
+        function openCounterPortal() {
+            log('Opening real counter portal...', '#fff');
+            window.open('counter_portal.html', '_blank');
+        }
+
+        // Auto-test on load
+        window.onload = () => {
+            log('🚀 Test page loaded', '#0ff');
+            log('Server URL: ' + API_BASE, '#0ff');
+            setTimeout(() => testHealth(), 1000);
+        };
+    </script>
+</body>
+</html>
+
