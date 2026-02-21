@@ -2,11 +2,27 @@
 Main FastAPI application for Queue Management System
 Ethiopia - Queue Management Standard
 """
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import List
+from telegram_routes import router as telegram_router
+from queue_telegram_integration import QueueTelegramIntegration
+from config import settings
+# Add these imports to your existing imports
+from queue_telegram_integration import QueueTelegramIntegration
+from config import settings
+import logging
+from telegram_routes import router as telegram_router
+logger = logging.getLogger(__name__)
+
+load_dotenv()
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+if not TELEGRAM_BOT_TOKEN:
+    raise ValueError("TELEGRAM_BOT_TOKEN not found in environment variables")
 
 from database import get_db, init_db, Ticket, Citizen, Counter, AuditLog, TicketStatus, ServiceType
 from models import (
@@ -28,12 +44,55 @@ from fastapi.staticfiles import StaticFiles
 # Role-based access dependencies
 counter_access = require_role(["counter", "admin"])
 # Initialize FastAPI app
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
     description="Personalized Queue Management System"
 )
 
+# ================= INCLUDE TELEGRAM ROUTES =================
+app.include_router(telegram_router)
+# ================= CORS MIDDLEWARE =================
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ================= STATIC FILES =================
+app.mount("/web", StaticFiles(directory="web_portals"), name="web")
+
+app.include_router(telegram_router)  # ❌ WRONG - app not fully initialized yet
+
+# ================= TELEGRAM INTEGRATION =================
+telegram_integration = None
+
+if settings.TELEGRAM_ENABLED:
+    telegram_integration = QueueTelegramIntegration(settings.TELEGRAM_BOT_TOKEN)
+    logger.info("✅ Telegram integration initialized")
+else:
+    logger.warning("⚠️ Telegram notifications disabled")
+
+# ================= STARTUP & SHUTDOWN =================
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database and services on startup"""
+    init_db()
+    logger.info("✅ Database initialized")
+    if settings.TELEGRAM_ENABLED:
+        logger.info("✅ Telegram notifications enabled")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    if telegram_integration:
+        telegram_integration.shutdown()
+        logger.info("✅ Telegram integration shutdown")
+# Include telegram routes
+app.include_router(telegram_router)
 # ================= CORS MIDDLEWARE =================
 app.add_middleware(
     CORSMiddleware,
@@ -178,7 +237,47 @@ async def create_ticket(
     )
     db.add(audit)
     db.commit()
-
+# ========== SEND TELEGRAM NOTIFICATION ==========
+    telegram_notification_sent = False
+    telegram_reminder_scheduled = False
+    
+    if (telegram_integration and 
+        citizen.telegram_chat_id and 
+        citizen.telegram_notifications_enabled):
+        try:
+            # Check if appointment is for future date
+            appointment_date = getattr(request, 'appointment_date', None)
+            appointment_time = getattr(request, 'appointment_time', None)
+            
+            result = telegram_integration.register_ticket_sync(
+                chat_id=citizen.telegram_chat_id,
+                ticket_number=ticket_number,
+                queue_name=request.service_type.value,
+                appointment_date=appointment_date,
+                appointment_time=appointment_time,
+                estimated_wait_time=f"{estimate_wait_time(queue_position)} minutes" if not appointment_date else None,
+                service_counter=None,
+                instructions=None
+            )
+            
+            if result['status'] == 'success':
+                telegram_notification_sent = True
+                telegram_reminder_scheduled = result.get('reminder_scheduled', False)
+                
+                # Update ticket with Telegram status
+                new_ticket.telegram_notification_sent = True
+                new_ticket.telegram_reminder_scheduled = telegram_reminder_scheduled
+                if appointment_date:
+                    new_ticket.appointment_date = appointment_date
+                if appointment_time:
+                    new_ticket.appointment_time = appointment_time
+                
+                db.commit()
+                logger.info(f"✅ Telegram notification sent for ticket {ticket_number}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error sending Telegram notification: {str(e)}")
+            # Don't fail the ticket creation if Telegram fails
     # Prepare response
     response = TicketResponse(
         id=new_ticket.id,

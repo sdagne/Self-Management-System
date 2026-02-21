@@ -3,7 +3,9 @@ Configuration settings for Queue Management System
 """
 from pydantic_settings import BaseSettings
 from typing import Optional
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application settings"""
@@ -14,6 +16,7 @@ class Settings(BaseSettings):
         "admin": "admin-token",
         "counter": "counter-token",
         "display": "display-token"
+
     }
 
     # Security
@@ -32,6 +35,10 @@ class Settings(BaseSettings):
     # Application
     app_name: str = "SAN - Queue Management System"
     version: str = "1.0.0"
+
+    # Telegram Integration
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_ENABLED: bool = False
 
     class Config:
         env_file = ".env"

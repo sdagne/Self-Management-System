@@ -14,8 +14,10 @@ class TicketCreateRequest(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100)
     service_type: ServiceType
     phone_number: Optional[str] = None
-
-
+   # Optional appointment booking fields
+    appointment_date: Optional[str] = None  # Format: YYYY-MM-DD
+    appointment_time: Optional[str] = None  # Format: HH:MM
+    special_instructions: Optional[str] = None
 class TicketVerifyRequest(BaseModel):
     """Request to verify ticket at counter"""
     ticket_number: str

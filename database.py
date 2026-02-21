@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import enum
 from config import settings
+from sqlalchemy import Column, String, Boolean
 
 # Database setup
 engine = create_engine(
@@ -89,7 +90,9 @@ class Citizen(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_blacklisted = Column(Boolean, default=False)
     blacklist_reason = Column(String, nullable=True)
-
+     # Telegram fields
+    telegram_chat_id = Column(String, nullable=True, unique=True, index=True)
+    telegram_notifications_enabled = Column(Boolean, default=True)
 
 class Ticket(Base):
     """Ticket information"""
@@ -111,7 +114,12 @@ class Ticket(Base):
     expires_at = Column(DateTime, nullable=False)
 
     qr_code = Column(String, nullable=True)
-
+        # Telegram fields
+    telegram_chat_id = Column(String, nullable=True, index=True)
+    telegram_notification_sent = Column(Boolean, default=False)
+    telegram_reminder_scheduled = Column(Boolean, default=False)
+    appointment_date = Column(String, nullable=True)  # Format: YYYY-MM-DD
+    appointment_time = Column(String, nullable=True)  # Format: HH:MM
 
 class Counter(Base):
     """Service counter information"""
