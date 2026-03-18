@@ -390,11 +390,14 @@ async def get_queue_status(db: Session = Depends(get_db)):
     now_serving = [{"ticket_number": t.ticket_number, "counter_number": t.counter_number} for t in serving]
     waiting_count = db.query(Ticket).filter(Ticket.status == TicketStatus.WAITING).count()
     
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    total_served = db.query(Ticket).filter(Ticket.status == TicketStatus.COMPLETED, Ticket.completed_at >= today_start).count()
+    
     return QueueStatusResponse(
         now_serving=now_serving,
         waiting_count=waiting_count,
-        total_served_today=0, # Placeholder
-        average_wait_minutes=15
+        total_served_today=total_served,
+        average_wait_minutes=15 # This can be calculated if needed
     )
 
 @app.get("/api/display/waiting-tickets")
