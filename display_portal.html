@@ -226,8 +226,13 @@
             </div>
             <div class="stat-box avg">
                 <h3 id="avgWait">-</h3>
-                <p>Average Waiting Time (15min)</p>
+                <p>Average Waiting Time (min)</p>
             </div>
+        </div>
+
+        <h2 class="section-title">WAITING LIST</h2>
+        <div class="waiting-list" id="waitingList">
+            <p style="text-align: center; opacity: 0.5;">Queue is empty</p>
         </div>
 
         <div class="time-display" id="timeDisplay"></div>
@@ -263,16 +268,20 @@
 
         async function refreshDisplay() {
             try {
-                // Get queue status
-                const queueResponse = await fetch(`${API_BASE}/api/display/queue-status`);
-                const queueData = await queueResponse.json();
+                // Fetch basic status and stats
+                const [queueRes, statsRes, waitingRes] = await Promise.all([
+                    fetch(`${API_BASE}/api/display/queue-status`),
+                    fetch(`${API_BASE}/api/statistics`),
+                    fetch(`${API_BASE}/api/display/waiting-tickets`)
+                ]);
 
-                // Get statistics
-                const statsResponse = await fetch(`${API_BASE}/api/statistics`);
-                const statsData = await statsResponse.json();
+                const queueData = await queueRes.json();
+                const statsData = await statsRes.json();
+                const waitingData = await waitingRes.json();
 
                 updateServingDisplay(queueData.now_serving);
                 updateStats(queueData, statsData);
+                updateWaitingDisplay(waitingData.tickets);
             } catch (error) {
                 console.error('Failed to refresh display:', error);
             }
@@ -299,6 +308,21 @@
             });
 
             servingGrid.innerHTML = html;
+        }
+
+        function updateWaitingDisplay(tickets) {
+            const list = document.getElementById('waitingList');
+            if (!tickets || tickets.length === 0) {
+                list.innerHTML = '<p style="text-align: center; opacity: 0.5;">Queue is empty</p>';
+                return;
+            }
+
+            list.innerHTML = tickets.map(t => `
+                <div class="waiting-item">
+                    <div class="ticket">${t.ticket_number}</div>
+                    <div style="opacity: 0.7;">${t.service_type.replace('_', ' ').toUpperCase()}</div>
+                </div>
+            `).join('');
         }
 
         function updateStats(queueData, statsData) {
