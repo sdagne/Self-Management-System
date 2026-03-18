@@ -272,7 +272,7 @@ async def get_ticket_status(ticket_number: str, db: Session = Depends(get_db)):
 
 # ==================== COUNTER ENDPOINTS ====================
 
-@app.post("/api/counters", response_model=CounterResponse, dependencies=[Depends(counter_access)])
+@app.post("/api/counters", response_model=CounterResponse)
 async def create_counter(request: CounterCreateRequest, db: Session = Depends(get_db)):
     """Create a new service counter"""
     existing = db.query(Counter).filter(Counter.counter_number == request.counter_number).first()
@@ -296,7 +296,7 @@ async def get_counters(db: Session = Depends(get_db)):
     """Get all counters"""
     return db.query(Counter).all()
 
-@app.post("/api/counters/{counter_id}/call-next", dependencies=[Depends(counter_access)])
+@app.post("/api/counters/{counter_id}/call-next")
 async def call_next_ticket(counter_id: int, db: Session = Depends(get_db)):
     """Call next ticket in queue for this counter"""
     counter = db.query(Counter).filter(Counter.id == counter_id).first()
@@ -334,7 +334,7 @@ async def call_next_ticket(counter_id: int, db: Session = Depends(get_db)):
         "full_name": next_ticket.full_name
     }
 
-@app.post("/api/counters/{counter_id}/verify", dependencies=[Depends(counter_access)])
+@app.post("/api/counters/{counter_id}/verify")
 async def verify_ticket_at_counter(counter_id: int, request: TicketVerifyRequest, db: Session = Depends(get_db)):
     """Verify citizen ID matches ticket at counter"""
     ticket = db.query(Ticket).filter(Ticket.ticket_number == request.ticket_number).first()
@@ -364,7 +364,7 @@ async def verify_ticket_at_counter(counter_id: int, request: TicketVerifyRequest
 
     return {"message": "Verification successful", "status": ticket.status}
 
-@app.post("/api/counters/{counter_id}/complete", dependencies=[Depends(counter_access)])
+@app.post("/api/counters/{counter_id}/complete")
 async def complete_service(counter_id: int, ticket_number: str, db: Session = Depends(get_db)):
     """Mark service as completed"""
     ticket = db.query(Ticket).filter(Ticket.ticket_number == ticket_number).first()

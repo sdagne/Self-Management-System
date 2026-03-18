@@ -92,5 +92,5 @@ class StatisticsResponse(BaseModel):
     total_expired: int
     active_counters: int
     average_service_time_minutes: float
-    peak_hour: Optional[int]
+    peak_hour: Optional[int] = None
 
