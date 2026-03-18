@@ -51,7 +51,7 @@ class TicketResponse(BaseModel):
     full_name: str
     service_type: ServiceType
     status: TicketStatus
-    counter_number: Optional[int]
+    counter_number: Optional[int] = None
     created_at: datetime
     expires_at: datetime
     estimated_wait_minutes: Optional[int] = None
@@ -69,8 +69,8 @@ class CounterResponse(BaseModel):
     counter_name: str
     service_types: str
     is_active: bool
-    current_ticket_id: Optional[int]
-    staff_name: Optional[str]
+    current_ticket_id: Optional[int] = None
+    staff_name: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -81,7 +81,7 @@ class QueueStatusResponse(BaseModel):
     now_serving: List[dict]
     waiting_count: int
     total_served_today: int
-    average_wait_minutes: Optional[int]
+    average_wait_minutes: Optional[int] = None
 
 
 class StatisticsResponse(BaseModel):
