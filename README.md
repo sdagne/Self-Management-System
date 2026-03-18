@@ -207,7 +207,7 @@ Proprietary - Queue Management Standard Ethiopia
 - 📧 **Email:** [Shewan.dagne1@gmail.com](mailto:Shewan.dagne1@gmail.com)
 - 📱 **Phone / WhatsApp:** +41 79 612 3078
 
-## 📞 Support & Inquiries
+## 👤 Author & Contact
 
 For questions, technical support, or partnership inquiries regarding the deployment of this system, please reach out via the email or phone number provided above.
 
