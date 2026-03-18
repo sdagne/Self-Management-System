@@ -11,17 +11,17 @@ st.set_page_config(
     page_title="Ethiopia Queue Management System",
     page_icon="🎫",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed" # Hide sidebar to prioritize top menu
 )
 
 # Constants
 API_URL = "http://localhost:8001"
 # Map Display names to the actual filenames
 PORTALS = {
-    "Kiosk - Create Ticket": "kiosk_portal.html",
-    "Counter - Process Tickets": "counter_portal.html",
-    "Display - Public View": "display_portal.html",
-    "Admin - Demo Dashboard": "demo_dashboard.html"
+    "Kiosk": "kiosk_portal.html",
+    "Counter": "counter_portal.html",
+    "Display": "display_portal.html",
+    "Admin": "demo_dashboard.html"
 }
 
 def is_port_in_use(port):
@@ -31,69 +31,81 @@ def is_port_in_use(port):
 
 def start_backend():
     if not is_port_in_use(8001):
-        st.warning("⚠️ Backend is offline. Attempting to start...")
+        st.warning("⚠️ Backend is offline. Starting service...")
         try:
-            # Using sys.executable ensures we use the same environment
             cmd = [sys.executable, "run_server.py"]
             subprocess.Popen(cmd, shell=False)
             
-            # Wait for server to start with a progress bar
-            progress_bar = st.progress(0)
-            status_text = st.empty()
-            
-            for i in range(15):
-                progress_bar.progress((i + 1) / 15)
-                status_text.text(f"Waiting for backend... ({i+1}/15s)")
-                try:
-                    # Check health endpoint
-                    resp = requests.get(f"{API_URL}/api/display/queue-status", timeout=1)
-                    if resp.status_code == 200:
-                        status_text.success("✅ Backend is now ONLINE!")
-                        time.sleep(1)
-                        st.rerun()
-                        return
-                except:
-                    pass
-                time.sleep(1)
-            
-            st.error("❌ Failed to start backend automatically. Please run 'python run_server.py' manually in a separate terminal.")
+            with st.status("Starting Backend Service...", expanded=True) as status:
+                for i in range(15):
+                    st.write(f"Connecting... {i+1}/15s")
+                    try:
+                        resp = requests.get(f"{API_URL}/api/display/queue-status", timeout=1)
+                        if resp.status_code == 200:
+                            status.update(label="✅ Backend Online!", state="complete", expanded=False)
+                            st.rerun()
+                            return
+                    except:
+                        pass
+                    time.sleep(1)
+            st.error("❌ Failed to start backend manually. Run 'python run_server.py' in terminal.")
         except Exception as e:
-            st.error(f"❌ Error starting backend: {e}")
+            st.error(f"❌ Startup Error: {e}")
     else:
-        st.sidebar.success("✅ Backend Service Running")
+        # Backend is running, display status in a small header
+        pass
 
-# Sidebar navigation
-st.sidebar.title("🎫 Queue System")
-st.sidebar.markdown("**Ethiopia Queue Management**")
-st.sidebar.markdown("---")
+def create_test_ticket():
+    try:
+        payload = {
+            "id_number": "TEST-USER-1",
+            "full_name": "Streamlit Test",
+            "service_type": "kebele_id"
+        }
+        resp = requests.post(f"{API_URL}/api/tickets", json=payload)
+        if resp.status_code == 201:
+            data = resp.json()
+            st.toast(f"✅ Success! Generated Ticket: {data['ticket_number']}", icon="🎫")
+        else:
+            st.error(f"Error creating ticket: {resp.text}")
+    except Exception as e:
+        st.error(f"Connection error: {e}")
 
-selection = st.sidebar.radio("Navigation", list(PORTALS.keys()))
+# Header & Quick Actions
+st.title("🎫 Ethiopia Queue Management System")
 
-st.sidebar.markdown("---")
-if st.sidebar.button("Force Refresh Dashboard"):
-    st.rerun()
+# Navigation Tabs as requested (Horizontal Menu)
+tabs = st.tabs(list(PORTALS.keys()))
 
 # Main logic
 start_backend()
 
-# Get selected portal filename
-portal_file = PORTALS[selection]
+# Render content for each tab
+for i, (name, filename) in enumerate(PORTALS.items()):
+    with tabs[i]:
+        # Top toolbar for each tab
+        col1, col2, col3 = st.columns([2, 2, 4])
+        with col1:
+            if st.button(f"Refresh {name} Page", key=f"btn_{name}"):
+                st.rerun()
+        with col2:
+            if st.button("➕ Create Quick Ticket", key=f"add_{name}", help="Adds a test ticket to 'kebele_id' service"):
+                create_test_ticket()
+        
+        iframe_url = f"{API_URL}/web/{filename}"
+        if name == "Counter":
+            iframe_url += "?counter=1"
 
-# Display the portal
-st.subheader(f"🏢 {selection}")
+        st.markdown(f"[🔗 Open {name} in New Tab]({iframe_url})")
+        
+        # Responsive iframe
+        st.components.v1.iframe(iframe_url, height=900, scrolling=True)
 
-# We serve the local HTML files via an iframe pointing to the FastAPI static mount
-iframe_url = f"{API_URL}/web/{portal_file}"
-
-# Fallback Link
-st.markdown(f"[🔗 Open in New Tab]({iframe_url})")
-
-# Responsive iframe
-try:
-    # Adding a timestamp or unique key helps force refresh
-    st.components.v1.iframe(iframe_url, height=900, scrolling=True)
-except Exception as e:
-    st.error(f"Could not load the portal iframe: {e}")
-
+# Footer
 st.markdown("---")
-st.caption("Ethiopia Queue Management System - Unified Portal Hub")
+col_f1, col_f2 = st.columns(2)
+with col_f1:
+    st.caption("Ethiopia Queue Management System - Unified Portal Hub")
+with col_f2:
+    if st.button("Stop & Restart Backend"):
+        st.rerun()
