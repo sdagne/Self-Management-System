@@ -4,7 +4,7 @@ This will create Counter 2 and Counter 3 so you can see multiple counters on the
 """
 import requests
 
-API_BASE = "http://localhost:8000"
+API_BASE = "http://localhost:8001"
 
 def create_counter(counter_number, name, service_types, staff_name):
     """Create a new counter"""

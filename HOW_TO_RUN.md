@@ -21,9 +21,9 @@ You should see:
 Version: 1.0.0
 ============================================================
 
-🚀 Starting server on http://0.0.0.0:8000
-📖 API Documentation: http://localhost:8000/docs
-📊 Alternative Docs: http://localhost:8000/redoc
+🚀 Starting server on http://0.0.0.0:8001
+📖 API Documentation: http://localhost:8001/docs
+📊 Alternative Docs: http://localhost:8001/redoc
 
 Press CTRL+C to stop the server
 
@@ -31,15 +31,15 @@ Press CTRL+C to stop the server
 INFO:     Started server process
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Uvicorn running on http://0.0.0.0:8001
 ```
 
 ### Step 3: Access the Application
 
 Open in your browser:
-- **Demo Dashboard**: http://localhost:8000 (or open `demo_dashboard.html`)
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+- **Demo Dashboard**: http://localhost:8001 (or open `demo_dashboard.html`)
+- **API Docs**: http://localhost:8001/docs
+- **Health Check**: http://localhost:8001/health
 
 ---
 
@@ -53,7 +53,7 @@ python run_server.py
 python main.py
 
 # Method 3: Using uvicorn command
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 ---
@@ -95,7 +95,7 @@ python test_api.py
 ```
 1. Navigate to: D:\Queue Management Standard\demo_dashboard.html
 2. Double-click to open in browser
-3. Or visit: http://localhost:8000/docs
+3. Or visit: http://localhost:8001/docs
 ```
 
 ---
@@ -126,11 +126,11 @@ python.exe run_server.py
 pip install -r requirements.txt
 ```
 
-### Problem: "Port 8000 already in use"
+### Problem: "Port 8001 already in use"
 **Solution**: Kill existing process
 ```powershell
-# Find process using port 8000
-netstat -ano | findstr :8000
+# Find process using port 8001
+netstat -ano | findstr :8001
 
 # Kill process (replace PID with actual number)
 taskkill /PID <PID> /F
@@ -139,7 +139,7 @@ taskkill /PID <PID> /F
 ### Problem: Server starts but doesn't respond
 **Solution**: Check firewall or try localhost
 ```
-http://127.0.0.1:8000
+http://127.0.0.1:8001
 ```
 
 ---
@@ -148,17 +148,17 @@ http://127.0.0.1:8000
 
 ### Check if server is running
 ```powershell
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ### Create a test ticket
 ```powershell
-curl -X POST http://localhost:8000/api/tickets -H "Content-Type: application/json" -d "{\"id_number\":\"TEST123\",\"full_name\":\"Test User\",\"service_type\":\"immigration\"}"
+curl -X POST http://localhost:8001/api/tickets -H "Content-Type: application/json" -d "{\"id_number\":\"TEST123\",\"full_name\":\"Test User\",\"service_type\":\"immigration\"}"
 ```
 
 ### Get queue status
 ```powershell
-curl http://localhost:8000/api/display/queue-status
+curl http://localhost:8001/api/display/queue-status
 ```
 
 ---
@@ -191,7 +191,7 @@ uvicorn main:app --reload
 pip install gunicorn
 
 # Run with multiple workers
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 ```
 
 ---
@@ -236,7 +236,7 @@ pip install -r requirements.txt
 python run_server.py
 
 # 4. Open browser to:
-#    http://localhost:8000/docs
+#    http://localhost:8001/docs
 #    or open demo_dashboard.html
 
 # 5. Stop server: Press CTRL+C
@@ -255,7 +255,7 @@ python run_server.py
 │  5. Press Enter                          │
 │  6. Wait for "Uvicorn running..."       │
 │  7. Open browser                         │
-│  8. Visit: localhost:8000/docs          │
+│  8. Visit: localhost:8001/docs          │
 │  9. Done! 🎉                            │
 └─────────────────────────────────────────┘
 ```
@@ -272,17 +272,17 @@ When you run `python run_server.py`, you should see:
 Version: 1.0.0
 ============================================================
 
-🚀 Starting server on http://0.0.0.0:8000
-📖 API Documentation: http://localhost:8000/docs
-📊 Alternative Docs: http://localhost:8000/redoc
+🚀 Starting server on http://0.0.0.0:8001
+📖 API Documentation: http://localhost:8001/docs
+📊 Alternative Docs: http://localhost:8001/redoc
 
 Press CTRL+C to stop the server
 
 ============================================================
 🚀 Queue Management System v1.0.0 started
-📊 Server running on http://0.0.0.0:8000
+📊 Server running on http://0.0.0.0:8001
 INFO:     Will watch for changes in these directories: ['D:\\Queue Management Standard']
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
 INFO:     Started reloader process [XXXX] using WatchFiles
 INFO:     Started server process [XXXX]
 INFO:     Waiting for application startup.
@@ -299,7 +299,7 @@ The Queue Management System is now running and ready to use.
 
 **Access Points:**
 - 🌐 Demo Dashboard: `demo_dashboard.html`
-- 📚 API Docs: http://localhost:8000/docs
+- 📚 API Docs: http://localhost:8001/docs
 - 🧪 Run Tests: `python test_api.py`
 
 **To Stop:**

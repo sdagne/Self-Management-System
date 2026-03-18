@@ -4,7 +4,7 @@ from pathlib import Path
 import requests
 import sys
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8001/api"
 LOG_FILE = Path(__file__).parent / "ticket_history.json"
 
 

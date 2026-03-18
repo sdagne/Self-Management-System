@@ -1,7 +1,7 @@
 import requests
 import time
 
-BASE_URL = "http://localhost:8000/api/counters"
+BASE_URL = "http://localhost:8001/api/counters"
 
 SERVICE_TYPES = [
     "document_legalization",

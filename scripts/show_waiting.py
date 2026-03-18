@@ -1,7 +1,7 @@
 import requests
 import sys
 
-API_BASE = "http://localhost:8000/api"
+API_BASE = "http://localhost:8001/api"
 
 
 def fetch_waiting_tickets():

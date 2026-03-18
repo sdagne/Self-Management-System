@@ -5,7 +5,7 @@ Run this before running tests to clear all active tickets
 import requests
 import sys
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 # Common test IDs that might have stuck tickets
 TEST_IDS = [

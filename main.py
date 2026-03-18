@@ -12,11 +12,7 @@ from typing import List
 from telegram_routes import router as telegram_router
 from queue_telegram_integration import QueueTelegramIntegration
 from config import settings
-# Add these imports to your existing imports
-from queue_telegram_integration import QueueTelegramIntegration
-from config import settings
 import logging
-from telegram_routes import router as telegram_router
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -51,21 +47,8 @@ app = FastAPI(
     description="Personalized Queue Management System"
 )
 
-# ================= INCLUDE TELEGRAM ROUTES =================
-app.include_router(telegram_router)
-# ================= CORS MIDDLEWARE =================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # ================= STATIC FILES =================
-app.mount("/web", StaticFiles(directory="web_portals"), name="web")
-
-app.include_router(telegram_router)  # ❌ WRONG - app not fully initialized yet
+app.mount("/web", StaticFiles(directory="."), name="web")
 
 # ================= TELEGRAM INTEGRATION =================
 telegram_integration = None
@@ -91,19 +74,6 @@ async def shutdown_event():
     if telegram_integration:
         telegram_integration.shutdown()
         logger.info("✅ Telegram integration shutdown")
-# Include telegram routes
-app.include_router(telegram_router)
-# ================= CORS MIDDLEWARE =================
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
-)
-
-# ================= STATIC FILES =================
-app.mount("/web", StaticFiles(directory="web_portals"), name="web")
 
 # ================= ROUTES =================
 # Serve main page at root /

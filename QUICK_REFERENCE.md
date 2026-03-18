@@ -13,7 +13,7 @@ Press `CTRL+C` in the terminal
 
 ### Check if Server is Running
 ```powershell
-curl http://localhost:8000/health
+curl http://localhost:8001/health
 ```
 
 ---
@@ -29,10 +29,10 @@ start demo_dashboard.html
 ### API Documentation
 ```powershell
 # Swagger UI
-start http://localhost:8000/docs
+start http://localhost:8001/docs
 
 # ReDoc
-start http://localhost:8000/redoc
+start http://localhost:8001/redoc
 ```
 
 ---
@@ -46,7 +46,7 @@ python test_api.py
 
 ### Quick Health Check
 ```powershell
-python -c "import requests; print(requests.get('http://localhost:8000/health').json())"
+python -c "import requests; print(requests.get('http://localhost:8001/health').json())"
 ```
 
 ---
@@ -78,17 +78,17 @@ $body = @{
     service_type = "immigration"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Uri "http://localhost:8000/api/tickets" -Method Post -Body $body -ContentType "application/json"
+Invoke-RestMethod -Uri "http://localhost:8001/api/tickets" -Method Post -Body $body -ContentType "application/json"
 ```
 
 ### Get Queue Status
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/api/display/queue-status"
+Invoke-RestMethod -Uri "http://localhost:8001/api/display/queue-status"
 ```
 
 ### Get Statistics
 ```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/api/statistics"
+Invoke-RestMethod -Uri "http://localhost:8001/api/statistics"
 ```
 
 ---
@@ -99,7 +99,7 @@ Invoke-RestMethod -Uri "http://localhost:8000/api/statistics"
 ```python
 import requests
 
-response = requests.post("http://localhost:8000/api/tickets", json={
+response = requests.post("http://localhost:8001/api/tickets", json={
     "id_number": "ABC123",
     "full_name": "Tesfaye Bekele",
     "service_type": "immigration"
@@ -111,7 +111,7 @@ print(response.json())
 ```python
 import requests
 
-response = requests.post("http://localhost:8000/api/counters/1/call-next")
+response = requests.post("http://localhost:8001/api/counters/1/call-next")
 print(response.json())
 ```
 
@@ -146,10 +146,10 @@ Use these values in `service_type` field:
 
 | Service | URL |
 |---------|-----|
-| API Base | http://localhost:8000 |
-| Health Check | http://localhost:8000/health |
-| Swagger UI | http://localhost:8000/docs |
-| ReDoc | http://localhost:8000/redoc |
+| API Base | http://localhost:8001 |
+| Health Check | http://localhost:8001/health |
+| Swagger UI | http://localhost:8001/docs |
+| ReDoc | http://localhost:8001/redoc |
 | Demo Dashboard | file:///D:/Queue%20Management%20Standard/demo_dashboard.html |
 
 ---
@@ -172,8 +172,8 @@ Use these values in `service_type` field:
 
 ### Port Already in Use
 ```powershell
-# Kill process on port 8000
-Get-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess | Stop-Process -Force
+# Kill process on port 8001
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8001).OwningProcess | Stop-Process -Force
 ```
 
 ### Module Not Found
@@ -205,7 +205,7 @@ python run_server.py & Start-Sleep -Seconds 3 & python test_api.py
 ### With Gunicorn
 ```bash
 pip install gunicorn
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 ```
 
 ### With Environment Variables

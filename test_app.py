@@ -2,7 +2,7 @@ import unittest
 import requests
 import uuid
 
-BASE_URL = "http://localhost:8000/api"
+BASE_URL = "http://localhost:8001/api"
 
 class TestQueueManagementSystem(unittest.TestCase):
 

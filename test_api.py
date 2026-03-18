@@ -1,11 +1,11 @@
-﻿"""
+"""
 Test script for Queue Management System
 Run this to test the API endpoints
 """
 import requests
 import time
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 
 def cleanup_old_tickets():

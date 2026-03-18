@@ -5,7 +5,7 @@ This will show the display working with multiple counters
 import requests
 import time
 
-API_BASE = "http://localhost:8000"
+API_BASE = "http://localhost:8001"
 
 print("\n" + "="*70)
 print("DEMO: Multiple Counters on Display")

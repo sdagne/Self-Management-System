@@ -5,7 +5,7 @@ Use this script to cancel stuck tickets or manage active tickets
 import requests
 import sys
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 
 def cancel_ticket(ticket_number, id_number):

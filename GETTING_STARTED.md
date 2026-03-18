@@ -34,13 +34,13 @@ cd "D:\Queue Management Standard"
 python run_server.py
 ```
 
-The server will start on: **http://localhost:8000**
+The server will start on: **http://localhost:8001**
 
 ### 2. Access API Documentation
 
 Open your browser:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8001/docs
+- **ReDoc**: http://localhost:8001/redoc
 
 ### 3. Run Demo Test
 
@@ -326,7 +326,7 @@ python run_server.py
 ```powershell
 # Use Gunicorn or similar
 pip install gunicorn
-gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8001
 ```
 
 ### Docker (Future)
@@ -346,7 +346,7 @@ CMD ["python", "run_server.py"]
 ### Common Issues
 
 **Issue**: Server not starting
-**Solution**: Check if port 8000 is available
+**Solution**: Check if port 8001 is available
 
 **Issue**: Database errors
 **Solution**: Delete `queue_management.db` and restart
