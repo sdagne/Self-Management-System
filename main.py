@@ -303,9 +303,12 @@ async def call_next_ticket(counter_id: int, db: Session = Depends(get_db)):
     if not counter or not counter.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Counter not active")
 
-    service_types = counter.service_types.split(",")
+    # Robust parsing of service types (strip whitespace and skip empty)
+    service_types_list = [st.strip() for st in counter.service_types.split(",") if st.strip()]
+    
+    # Get next ticket
     next_ticket = db.query(Ticket).filter(
-        Ticket.service_type.in_([ServiceType(st) for st in service_types if st]),
+        Ticket.service_type.in_([ServiceType(st) for st in service_types_list]),
         Ticket.status == TicketStatus.WAITING,
         Ticket.expires_at > datetime.utcnow()
     ).order_by(Ticket.created_at).first()
