@@ -268,24 +268,32 @@
         }
 
         async function refreshDisplay() {
-            try {
-                // Fetch basic status and stats
-                const [queueRes, statsRes, waitingRes] = await Promise.all([
-                    fetch(`${API_BASE}/api/display/queue-status`),
-                    fetch(`${API_BASE}/api/statistics`),
-                    fetch(`${API_BASE}/api/display/waiting-tickets`)
-                ]);
+            // Fetch serving status
+            fetch(`${API_BASE}/api/display/queue-status`)
+                .then(res => res.json())
+                .then(data => {
+                    updateServingDisplay(data.now_serving);
+                    document.getElementById('waitingCount').textContent = data.waiting_count || 0;
+                    document.getElementById('servedToday').textContent = data.total_served_today || 0;
+                })
+                .catch(err => console.error('Serving sync error:', err));
 
-                const queueData = await queueRes.json();
-                const statsData = await statsRes.json();
-                const waitingData = await waitingRes.json();
+            // Fetch statistics
+            fetch(`${API_BASE}/api/statistics`)
+                .then(res => res.json())
+                .then(data => {
+                    const avgWait = data.average_service_time_minutes;
+                    document.getElementById('avgWait').textContent = avgWait > 0 ? Math.round(avgWait) : '-';
+                })
+                .catch(err => console.error('Stats sync error:', err));
 
-                updateServingDisplay(queueData.now_serving);
-                updateStats(queueData, statsData);
-                updateWaitingDisplay(waitingData.tickets);
-            } catch (error) {
-                console.error('Failed to refresh display:', error);
-            }
+            // Fetch waiting list
+            fetch(`${API_BASE}/api/display/waiting-tickets`)
+                .then(res => res.json())
+                .then(data => {
+                    updateWaitingDisplay(data.tickets);
+                })
+                .catch(err => console.error('Waiting list sync error:', err));
         }
 
         function updateServingDisplay(nowServing) {
