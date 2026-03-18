@@ -281,22 +281,14 @@
         function updateServingDisplay(nowServing) {
             const servingGrid = document.getElementById('servingGrid');
 
-            // Debug: Log what we received from API
-            console.log('Now Serving Data:', nowServing);
-
             if (!nowServing || nowServing.length === 0) {
                 servingGrid.innerHTML = '<div class="no-tickets">No one currently being served</div>';
                 return;
             }
 
-            // Display each ticket with its counter
             let html = '';
             nowServing.forEach(ticket => {
-                // Get counter number, default to 1 if not set
                 const counterNum = ticket.counter_number || 1;
-
-                console.log(`Ticket ${ticket.ticket_number} at Counter ${counterNum}`);
-
                 html += `
                     <div class="serving-card">
                         <div class="label">TICKET NUMBER</div>
@@ -320,4 +312,3 @@
     </script>
 </body>
 </html>
-
