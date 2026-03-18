@@ -20,31 +20,24 @@ st.sidebar.markdown("**Ethiopia Queue Management**")
 st.sidebar.markdown("---")
 
 # Deployment Mode Selection
-deployment_mode = st.sidebar.selectbox(
-    "🌍 Deployment Mode",
-    ["Local (Auto-start)", "Cloud (Remote API)"],
-    help="Select 'Local' if running on your machine, or 'Cloud' if the backend is hosted elsewhere."
+deployment_mode = st.sidebar.radio(
+    "🌍 Current Environment",
+    ["Local Home / Office", "Public Website (Cloud)"],
+    help="Use 'Local' if you are running this on your own machine. Use 'Public' if you are visiting the Streamlit web address."
 )
 
-if deployment_mode == "Local (Auto-start)":
+if deployment_mode == "Local Home / Office":
     API_URL = "http://localhost:8001"
-    st.sidebar.info("Running on Localhost:8001")
+    st.sidebar.info("🏠 Localhost Mode Active")
 else:
     API_URL = st.sidebar.text_input(
-        "🔗 Backend API URL",
+        "🔗 Enter Backend API URL",
         value="https://your-api.onrender.com",
-        help="Paste the URL of your hosted FastAPI backend (e.g. from Render or Railway)"
+        placeholder="Paste your Render/Railway URL here"
     )
+    st.sidebar.warning("⚠️ If you see 'Connection Refused', ensure your public backend is online and the URL is correct.")
 
 st.sidebar.markdown("---")
-
-# Constants
-PORTALS = {
-    "Kiosk - Create Ticket": "kiosk_portal.html",
-    "Counter - Process Tickets": "counter_portal.html",
-    "Display - Public View": "display_portal.html",
-    "Admin - Demo Dashboard": "demo_dashboard.html"
-}
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -52,32 +45,39 @@ def is_port_in_use(port):
         return s.connect_ex(('localhost', port)) == 0
 
 def start_backend_local():
-    if deployment_mode == "Local (Auto-start)":
+    if deployment_mode == "Local Home / Office":
         if not is_port_in_use(8001):
-            st.warning("⚠️ Backend is offline. Starting service...")
-            try:
-                cmd = [sys.executable, "run_server.py"]
-                subprocess.Popen(cmd, shell=False)
-                
-                with st.status("Starting Backend Service...", expanded=True) as status:
-                    for i in range(15):
-                        st.write(f"Connecting... {i+1}/15s")
-                        try:
-                            resp = requests.get(f"{API_URL}/api/display/queue-status", timeout=1)
-                            if resp.status_code == 200:
-                                status.update(label="✅ Backend Online!", state="complete", expanded=False)
-                                st.rerun()
-                                return
-                        except:
-                            pass
-                        time.sleep(1)
-                st.error("❌ Failed to start backend Automatically. Run 'python run_server.py' in terminal.")
-            except Exception as e:
-                st.error(f"❌ Startup Error: {e}")
+            st.warning("⚠️ Local Backend is Offline.")
+            if st.button("🚀 START BACKEND NOW"):
+                try:
+                    # Using sys.executable to ensure we use the same venv
+                    cmd = [sys.executable, "run_server.py"]
+                    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
+                    
+                    with st.status("Starting Backend...", expanded=True) as status_box:
+                        for i in range(10):
+                            st.write(f"Connecting to server... {i+1}/10")
+                            try:
+                                resp = requests.get(f"{API_URL}/api/display/queue-status", timeout=1)
+                                if resp.status_code == 200:
+                                    status_box.update(label="✅ Success!", state="complete", expanded=False)
+                                    st.rerun()
+                                    return
+                            except:
+                                pass
+                            time.sleep(1)
+                    st.error("❌ Startup Timeout. please run it manually.")
+                except Exception as e:
+                    st.error(f"❌ Startup Error: {e}")
+            
+            st.markdown("---")
+            st.markdown("### 🛠️ Manual Start (Recommended)")
+            st.markdown("If the button above fails, please run this in a **separate** terminal:")
+            st.code("python run_server.py", language="bash")
         else:
             st.sidebar.success("✅ Local Backend Online")
     else:
-        # Cloud Mode - Just check connectivity
+        # Remote Mode - No auto-start
         try:
             resp = requests.get(f"{API_URL}/health", timeout=2)
             if resp.status_code == 200:
@@ -85,53 +85,45 @@ def start_backend_local():
             else:
                 st.sidebar.error("❌ Cloud API responded with error")
         except:
-            st.sidebar.warning("⚠️ Could not reach Cloud API. Is the URL correct?")
+            st.sidebar.warning("⚠️ Cloud API Unreachable")
 
 # Tabs for Portals
-tabs = st.tabs(list(PORTALS.keys()))
+tabs = st.tabs(["🎫 Kiosk", "💼 Counter", "🖥️ Public Display", "📊 Dashboard"])
+PORTALS = ["kiosk_portal.html", "counter_portal.html", "display_portal.html", "demo_dashboard.html"]
 
-# Backend Lifecycle
+# Check/Start Connection
 start_backend_local()
 
-def create_test_ticket():
-    try:
-        payload = {
-            "id_number": "TEST-USER-1",
-            "full_name": "Streamlit Cloud Test",
-            "service_type": "kebele_id"
-        }
-        resp = requests.post(f"{API_URL}/api/tickets", json=payload)
-        if resp.status_code == 201:
-            data = resp.json()
-            st.toast(f"✅ Created Ticket: {data['ticket_number']}", icon="🎫")
-        else:
-            st.error(f"API Error: {resp.text}")
-    except Exception as e:
-        st.error(f"Connection Error: {e}")
-
-# Render content for each tab
-for i, (name, filename) in enumerate(PORTALS.items()):
+# Content
+for i, tab_name in enumerate(["🎫 Kiosk", "💼 Counter", "🖥️ Public Display", "📊 Dashboard"]):
     with tabs[i]:
-        # Quick Actions
-        q_col1, q_col2, q_col3 = st.columns([2, 2, 4])
-        with q_col1:
-            if st.button(f"🔄 Reload {name}", key=f"re_{name}"):
+        filename = PORTALS[i]
+        
+        # Tools
+        c1, c2, c3 = st.columns([2, 1, 5])
+        with c1:
+            if st.button(f"Refresh {tab_name}", key=f"r_{i}"):
                 st.rerun()
-        with q_col2:
-            if st.button("➕ Quick Ticket", key=f"qt_{name}"):
-                create_test_ticket()
+        with c2:
+            if st.button("➕ Test Ticket", key=f"t_{i}"):
+                try:
+                    requests.post(f"{API_URL}/api/tickets", json={"id_number":"TEST","full_name":"Test User","service_type":"kebele_id"})
+                    st.toast("Ticket created!")
+                except:
+                    st.error("Link offline")
         
-        # Portal URL building
-        # In Cloud mode, we rely on the backend serving the static files
+        # Build URL
         iframe_src = f"{API_URL}/web/{filename}"
-        if name == "Counter":
+        if "Counter" in tab_name:
             iframe_src += "?counter=1"
-
-        st.markdown(f"[[🌐 Fullscreen View]]({iframe_src})")
         
-        # Display the iframe
-        st.components.v1.iframe(iframe_src, height=900, scrolling=True)
+        st.markdown(f"[[🌐 Fullscreen Page]]({iframe_src})")
+        
+        # Rendering
+        try:
+            st.components.v1.iframe(iframe_src, height=900, scrolling=True)
+        except Exception as e:
+            st.info("Iframe loading... ensure the backend is running.")
 
-# Footer
 st.markdown("---")
 st.caption("Ethiopia Queue Management System - Cloud Hub Beta")
