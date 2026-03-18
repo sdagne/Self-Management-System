@@ -397,6 +397,31 @@ async def get_queue_status(db: Session = Depends(get_db)):
         average_wait_minutes=15
     )
 
+@app.get("/api/display/waiting-tickets")
+async def get_waiting_tickets(db: Session = Depends(get_db)):
+    """Get all waiting tickets with details for dashboard display"""
+    waiting_tickets = db.query(Ticket).filter(
+        Ticket.status == TicketStatus.WAITING,
+        Ticket.expires_at > datetime.utcnow()
+    ).order_by(Ticket.created_at).all()
+
+    tickets = []
+    for idx, ticket in enumerate(waiting_tickets, 1):
+        tickets.append({
+            "ticket_number": ticket.ticket_number,
+            "full_name": ticket.full_name,
+            "service_type": ticket.service_type.value,
+            "status": ticket.status.value,
+            "created_at": ticket.created_at.isoformat(),
+            "position": idx,
+            "id_number_display": ticket.id_number_hash[:8] + "***" 
+        })
+
+    return {
+        "total_waiting": len(tickets),
+        "tickets": tickets
+    }
+
 @app.get("/api/statistics", response_model=StatisticsResponse)
 async def get_statistics(db: Session = Depends(get_db)):
     """Get system statistics"""
