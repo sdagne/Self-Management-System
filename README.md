@@ -204,12 +204,11 @@ Proprietary - Queue Management Standard Ethiopia
 ## 👤 Author & Contact
 
 **Shewan Dagne**
-- 📧 **Email:** [Shewan.dagne1@gmail.com](mailto:Shewan.dagne1@gmail.com)
-- 📱 **Phone / WhatsApp:** +41 79 612 30 XX
+>- 📧 **Email:** [Shewan.dagne1@gmail.com](mailto:Shewan.dagne1@gmail.com)
+>- 📱 **Phone / WhatsApp:** +41 79 612 30 **
+>- ## 📞 Support & Inquiries
 
-## 📞 Support & Inquiries
-
-For questions, technical support, or partnership inquiries regarding the deployment of this system, please reach out via the email or phone number provided above.
+> - For questions, technical support, or partnership inquiries regarding the deployment of this system, please reach out via the email or phone number provided above.
 
 ---
 
