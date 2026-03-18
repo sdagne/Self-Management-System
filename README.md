@@ -35,12 +35,12 @@ cp .env.example .env
 python main.py
 ```
 
-The server will start on `http://localhost:8000`
+The server will start on `http://localhost:8001`
 
 ### 4. Access API Documentation
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- Swagger UI: `http://localhost:8001/docs`
+- ReDoc: `http://localhost:8001/redoc`
 
 ## 📋 API Endpoints
 
@@ -94,12 +94,12 @@ Queue Management Standard/
 
 ## 🔐 Security Features
 
-1. **ID Hashing**: All ID numbers are hashed using SHA-256
-2. **One Active Ticket Rule**: Prevents multiple ticket requests
-3. **Ticket Expiration**: Automatically expires after configured time
-4. **Verification Required**: Must verify ID at counter
-5. **Suspicious Activity Detection**: Flags unusual patterns
-6. **Audit Logging**: Complete trail of all actions
+> 1. **ID Hashing**: All ID numbers are hashed using SHA-256
+> 2. **One Active Ticket Rule**: Prevents multiple ticket requests
+> 3. **Ticket Expiration**: Automatically expires after configured time
+> 4. **Verification Required**: Must verify ID at counter
+> 5. **Suspicious Activity Detection**: Flags unusual patterns
+> 6. **Audit Logging**: Complete trail of all actions
 
 ## 🎯 Usage Examples
 
@@ -108,7 +108,7 @@ Queue Management Standard/
 ```python
 import requests
 
-response = requests.post("http://localhost:8000/api/tickets", json={
+response = requests.post("http://localhost:8001/api/tickets", json={
     "id_number": "ABC123456",
     "full_name": "Tesfaye Bekele",
     "service_type": "immigration",
@@ -123,7 +123,7 @@ print(f"Queue Position: {ticket['queue_position']}")
 ### Calling Next Ticket (Counter)
 
 ```python
-response = requests.post("http://localhost:8000/api/counters/1/call-next")
+response = requests.post("http://localhost:8001/api/counters/1/call-next")
 result = response.json()
 print(f"Now serving: {result['ticket_number']} at Counter {result['counter_number']}")
 ```
@@ -131,7 +131,7 @@ print(f"Now serving: {result['ticket_number']} at Counter {result['counter_numbe
 ### Verifying Ticket (Counter)
 
 ```python
-response = requests.post("http://localhost:8000/api/counters/1/verify", json={
+response = requests.post("http://localhost:8001/api/counters/1/verify", json={
     "ticket_number": "IM-023",
     "id_number": "ABC123456"
 })
@@ -150,18 +150,18 @@ MAX_QUEUE_SIZE=500
 
 # Server configuration
 HOST=0.0.0.0
-PORT=8000
+PORT=8001
 ```
 
 ## 📊 Service Types
 
-- Birth Certificate (`birth_certificate`)
-- Tax Service (`tax_service`)
-- Immigration (`immigration`)
-- Business License (`business_license`)
-- Passport Renewal (`passport_renewal`)
-- Document Legalization (`document_legalization`)
-- Other (`other`)
+>- Birth Certificate (`birth_certificate`)
+>- Tax Service (`tax_service`)
+>- Immigration (`immigration`)
+>- Business License (`business_license`)
+>- Passport Renewal (`passport_renewal`)
+>- Document Legalization (`document_legalization`)
+>- Other (`other`)
 
 ## 🔄 Ticket Status Flow
 
@@ -174,11 +174,11 @@ WAITING → CALLED → SERVING → COMPLETED
 
 ## 🚦 Anti-Fraud Rules
 
-1. **One Active Ticket**: Can't request another ticket while one is active
-2. **Ticket Expiration**: Valid for 2 hours only
-3. **ID Verification**: Must match at counter
-4. **Rate Limiting**: Prevents rapid multiple requests
-5. **Blacklist Support**: Can block problematic users
+>1. **One Active Ticket**: Can't request another ticket while one is active
+>2. **Ticket Expiration**: Valid for 2 hours only
+>3. **ID Verification**: Must match at counter
+>4. **Rate Limiting**: Prevents rapid multiple requests
+>5. **Blacklist Support**: Can block problematic users
 
 ## 📈 Future Enhancements (Phase 2 & 3)
 
@@ -201,9 +201,15 @@ This is a prototype/MVP implementation. Contributions are welcome!
 
 Proprietary - Queue Management Standard Ethiopia
 
-## 📞 Support
+## 👤 Author & Contact
 
-For questions or support, please contact the development team.
+**Shewan Dagne**
+- 📧 **Email:** [Shewan.dagne1@gmail.com](mailto:Shewan.dagne1@gmail.com)
+- 📱 **Phone / WhatsApp:** +41 79 612 3078
+
+## 📞 Support & Inquiries
+
+For questions, technical support, or partnership inquiries regarding the deployment of this system, please reach out via the email or phone number provided above.
 
 ---
 
