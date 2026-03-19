@@ -259,18 +259,18 @@ WAITING → CALLED → SERVING → COMPLETED
 
 ### Phase 2: Enhanced Features
 >- [ ] SMS notifications
-- [ ] Mobile app for citizens
-- [ ] Thermal printer integration
-- [ ] NFC card reader support
-- [ ] Multi-language (Amharic, Oromo, etc.)
+>- [ ] Mobile app for citizens
+>- [ ] Thermal printer integration
+>- [ ] NFC card reader support
+>- [ ] Multi-language (Amharic, Oromo, etc.)
 
 ### Phase 3: AI & Advanced Analytics
-- [ ] AI wait time prediction
-- [ ] Crowd analytics
-- [ ] Voice assistant in Amharic
-- [ ] Advanced fraud detection with ML
-- [ ] Peak hour optimization
-- [ ] Integration with Fayda National ID
+>- [ ] AI wait time prediction
+>- [ ] Crowd analytics
+>- [ ] Voice assistant in Amharic
+>- [ ] Advanced fraud detection with ML
+>- [ ] Peak hour optimization
+>- [ ] Integration with Fayda National ID
 
 ---
 
@@ -294,9 +294,9 @@ You still need to build:
    - Estimated wait times
 
 **Technology Suggestions**:
-- React.js or Vue.js
-- Tailwind CSS for styling
-- WebSocket for real-time updates
+>>- React.js or Vue.js
+>>- Tailwind CSS for styling
+>>- WebSocket for real-time updates
 
 ---
 
