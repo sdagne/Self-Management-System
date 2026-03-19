@@ -307,7 +307,36 @@
 
     <script>
         const API_BASE = window.location.origin;
-        const COUNTER_ID = 1;
+        let COUNTER_ID = null;
+
+        async function initCounter() {
+            try {
+                // Get existing counters
+                const res = await fetch(`${API_BASE}/api/counters`);
+                const counters = await res.json();
+                if (counters.length > 0) {
+                    COUNTER_ID = counters[0].id;
+                } else {
+                    // Auto-create counter 1 if none exist
+                    const create = await fetch(`${API_BASE}/api/counters`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            counter_number: 1,
+                            counter_name: 'Counter 1',
+                            staff_name: 'Staff',
+                            service_types: ['immigration','birth_certificate','tax_service','business_license','passport_renewal','document_legalization','other']
+                        })
+                    });
+                    const data = await create.json();
+                    COUNTER_ID = data.id;
+                }
+            } catch (e) {
+                showResult('❌ Cannot connect to server', 'error');
+            }
+            refreshQueue();
+            refreshStats();
+        }
 
         // Auto-refresh queue and stats every 5 seconds
         setInterval(() => {
@@ -316,8 +345,7 @@
         }, 5000);
 
         // Initial load
-        refreshQueue();
-        refreshStats();
+        initCounter();
 
         async function callNextTicket() {
             showResult('Calling next ticket...', 'info');
