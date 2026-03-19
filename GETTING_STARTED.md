@@ -31,7 +31,7 @@ Queue Management Standard/
 
 ```powershell
 cd "D:\Queue Management System"
-python run_server.py
+ python run_server.py
 ```
 
 The server will start on: **http://localhost:8001**
@@ -101,7 +101,7 @@ Content-Type: application/json
 
 {
   "id_number": "ABC123456",
-  "full_name": "Tesfaye Bekele",
+  "full_name": "Addis Dagne",
   "service_type": "immigration",
   "phone_number": "+251911234567"
 }
@@ -127,7 +127,7 @@ Content-Type: application/json
   "counter_number": 1,
   "counter_name": "Immigration Counter 1",
   "service_types": ["immigration", "passport_renewal"],
-  "staff_name": "Almaz Worku"
+  "staff_name": "Shewan Dagne"
 }
 ```
 
@@ -206,18 +206,18 @@ WAITING → CALLED → SERVING → COMPLETED
 
 ### Scenario 1: Citizen Gets a Ticket
 
-1. Citizen arrives at kiosk
-2. Scans ID: `ABC123456`
-3. Enters name: `Tesfaye Bekele`
-4. Selects service: `Immigration`
-5. Receives ticket: `IM-001`
-6. Queue position: `1`
-7. Estimated wait: `5 minutes`
+>1. Citizen arrives at kiosk
+>2. Scans ID: `ABC123456`
+>3. Enters name: `Shewan Dagne`
+>4. Selects service: `Immigration`
+>5. Receives ticket: `IM-001`
+>6. Queue position: `1`
+>7. Estimated wait: `5 minutes`
 
 ### Scenario 2: Counter Serves Citizen
 
 1. Staff clicks "Call Next"
-2. System displays: `IM-001 - Tesfaye Bekele`
+2. System displays: `IM-001 - Shewan Dagne`
 3. Citizen approaches counter
 4. Staff scans ID to verify
 5. System confirms: ✅ Verified
