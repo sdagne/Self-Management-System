@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAN Queue Management System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+            background: #0a0520;
+        }
+
+        /* ── Layered background ── */
+        .bg-wrap {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 90% 70% at 50% 0%, #2a1b6e 0%, transparent 65%),
+                radial-gradient(ellipse 60% 50% at 0% 100%, #1a1060 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 100% 50%, #3b0f8c 0%, transparent 55%),
+                #0a0520;
+        }
+
+        /* Mesh grid */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background-image:
+                linear-gradient(rgba(130, 100, 255, 0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(130, 100, 255, 0.07) 1px, transparent 1px);
+            background-size: 55px 55px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+        }
+
+        /* Glowing orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: 0;
+            animation: float 14s ease-in-out infinite alternate;
+        }
+
+        .orb1 {
+            width: 500px;
+            height: 500px;
+            background: #4f3bb5;
+            opacity: 0.35;
+            top: -150px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .orb2 {
+            width: 420px;
+            height: 420px;
+            background: #7c3aed;
+            opacity: 0.28;
+            bottom: -100px;
+            right: -80px;
+            animation-delay: -5s;
+        }
+
+        .orb3 {
+            width: 300px;
+            height: 300px;
+            background: #2563eb;
+            opacity: 0.22;
+            top: 40%;
+            left: 55%;
+            animation-delay: -9s;
+        }
+
+        @keyframes float {
+            from {
+                transform: translate(0px, 0px) scale(1);
+            }
+
+            to {
+                transform: translate(25px, 18px) scale(1.07);
+            }
+        }
+
+        /* ── Outer frame ── */
+        .frame {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 980px;
+            border-radius: 28px;
+            padding: 3px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed, #3b82f6, #8b5cf6, #4f46e5);
+            background-size: 300% 300%;
+            animation: shimmer 6s ease infinite;
+            box-shadow:
+                0 0 0 1px rgba(139, 92, 246, 0.15),
+                0 30px 80px rgba(79, 46, 229, 0.35),
+                0 0 60px rgba(99, 102, 241, 0.2);
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Corner dots */
+        .frame::before,
+        .frame::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #a78bfa;
+            box-shadow: 0 0 10px #a78bfa;
+            z-index: 2;
+        }
+
+        .frame::before {
+            top: -4px;
+            left: -4px;
+        }
+
+        .frame::after {
+            bottom: -4px;
+            right: -4px;
+        }
+
+        .frame-inner {
+            background: #0d0825;
+            border-radius: 26px;
+            padding: 48px 40px 40px;
+            width: 100%;
+        }
+
+        /* ── Main wrapper ── */
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ── Header ── */
+        .top-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 999px;
+            padding: 7px 20px;
+            margin-bottom: 28px;
+            font-size: 0.78em;
+            font-weight: 600;
+            color: rgba(196, 181, 253, 0.85);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .top-pill span {
+            font-size: 1.3em;
+        }
+
+        h1 {
+            font-size: clamp(2.2em, 5.5vw, 3.4em);
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: -0.03em;
+            line-height: 1.12;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #e0d7ff 0%, #a78bfa 40%, #60a5fa 80%, #93c5fd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 0.95em;
+            color: rgba(196, 181, 253, 0.45);
+            margin-bottom: 52px;
+            font-weight: 400;
+        }
+
+        /* ── Cards ── */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            width: 100%;
+        }
+
+        .card {
+            position: relative;
+            border-radius: 22px;
+            padding: 32px 28px 28px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            overflow: hidden;
+            transition: transform 0.28s cubic-bezier(.22, .68, 0, 1.2), box-shadow 0.28s ease;
+            cursor: pointer;
+
+            /* Glass base */
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+        }
+
+        .card:hover {
+            transform: translateY(-7px) scale(1.01);
+        }
+
+        /* Inner glow layer */
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 22px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        /* Top shimmer line */
+        .card-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            border-radius: 22px 22px 0 0;
+        }
+
+        /* ── Kiosk — Blue ── */
+        .kiosk {
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .kiosk:hover {
+            box-shadow: 0 24px 60px rgba(59, 130, 246, 0.22), 0 0 0 1px rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .kiosk::after {
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.1), transparent);
+        }
+
+        .kiosk .card-line {
+            background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, transparent);
+        }
+
+        .kiosk .icon-bg {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+        }
+
+        .kiosk h2 {
+            color: #bfdbfe;
+        }
+
+        .kiosk .go {
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        .kiosk .go:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+
+        /* ── Counter — Violet ── */
+        .counter {
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+
+        .counter:hover {
+            box-shadow: 0 24px 60px rgba(139, 92, 246, 0.22), 0 0 0 1px rgba(139, 92, 246, 0.3);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+
+        .counter::after {
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(139, 92, 246, 0.1), transparent);
+        }
+
+        .counter .card-line {
+            background: linear-gradient(90deg, transparent, #8b5cf6, #a78bfa, transparent);
+        }
+
+        .counter .icon-bg {
+            background: rgba(139, 92, 246, 0.15);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+        }
+
+        .counter h2 {
+            color: #ddd6fe;
+        }
+
+        .counter .go {
+            color: #a78bfa;
+            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.08);
+        }
+
+        .counter .go:hover {
+            background: rgba(139, 92, 246, 0.2);
+        }
+
+        /* ── Display — Indigo ── */
+        .display {
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .display:hover {
+            box-shadow: 0 24px 60px rgba(99, 102, 241, 0.22), 0 0 0 1px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .display::after {
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99, 102, 241, 0.1), transparent);
+        }
+
+        .display .card-line {
+            background: linear-gradient(90deg, transparent, #6366f1, #818cf8, transparent);
+        }
+
+        .display .icon-bg {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+
+        .display h2 {
+            color: #c7d2fe;
+        }
+
+        .display .go {
+            color: #818cf8;
+            border-color: rgba(99, 102, 241, 0.3);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .display .go:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        /* ── Demo — Blue-violet mix ── */
+        .demo {
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .demo:hover {
+            box-shadow: 0 24px 60px rgba(79, 70, 229, 0.22), 0 0 0 1px rgba(79, 70, 229, 0.3);
+            border-color: rgba(79, 70, 229, 0.4);
+        }
+
+        .demo::after {
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79, 70, 229, 0.1), transparent);
+        }
+
+        .demo .card-line {
+            background: linear-gradient(90deg, transparent, #4f46e5, #6366f1, transparent);
+        }
+
+        .demo .icon-bg {
+            background: rgba(79, 70, 229, 0.15);
+            border: 1px solid rgba(79, 70, 229, 0.25);
+        }
+
+        .demo h2 {
+            color: #e0e7ff;
+        }
+
+        .demo .go {
+            color: #818cf8;
+            border-color: rgba(79, 70, 229, 0.3);
+            background: rgba(79, 70, 229, 0.08);
+        }
+
+        .demo .go:hover {
+            background: rgba(79, 70, 229, 0.2);
+        }
+
+        .icon-bg {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6em;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1em;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 0.86em;
+            color: rgba(196, 181, 253, 0.38);
+            line-height: 1.65;
+            flex: 1;
+        }
+
+        .go {
+            margin-top: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78em;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid;
+            transition: background 0.2s, gap 0.2s;
+        }
+
+        .card:hover .go {
+            gap: 12px;
+        }
+
+        /* ── Status bar ── */
+        .status-bar {
+            margin-top: 44px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.18);
+            border-radius: 999px;
+            padding: 11px 26px;
+            font-size: 0.82em;
+            font-weight: 500;
+            color: rgba(196, 181, 253, 0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #64748b;
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+
+        .dot.online {
+            background: #818cf8;
+            box-shadow: 0 0 10px #818cf8cc;
+            animation: blink 2.2s infinite;
+        }
+
+        .dot.offline {
+            background: #f87171;
+            box-shadow: 0 0 8px #f87171aa;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.35;
+            }
+        }
+
+        .footer {
+            margin-top: 22px;
+            font-size: 0.72em;
+            color: rgba(139, 92, 246, 0.3);
+            letter-spacing: 0.05em;
+        }
+
+        @media (max-width: 580px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-wrap"></div>
+    <div class="bg-grid"></div>
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+
+    <div class="frame">
+        <div class="frame-inner">
+            <div class="wrapper">
+
+                <div class="top-pill"><span>🇪🇹</span> Ethiopia &nbsp;·&nbsp; SAN Portal</div>
+                <h1>Queue Management<br>System</h1>
+                <p class="subtitle">Choose a portal below to get started</p>
+
+                <div class="cards">
+
+                    <a class="card kiosk" href="kiosk_portal.html" target="_blank">
+                        <div class="card-line"></div>
+                        <div class="icon-bg">🎫</div>
+                        <h2>Citizen Kiosk</h2>
+                        <p>Citizens register and receive a queue ticket for their requested government service.</p>
+                        <span class="go">Open &nbsp;→</span>
+                    </a>
+
+                    <a class="card counter" href="counter_portal.html" target="_blank">
+                        <div class="card-line"></div>
+                        <div class="icon-bg">🖥️</div>
+                        <h2>Counter Staff Portal</h2>
+                        <p>Staff call and serve the next citizen in queue from their assigned service counter.</p>
+                        <span class="go">Open &nbsp;→</span>
+                    </a>
+
+                    <a class="card display" href="display_portal.html" target="_blank">
+                        <div class="card-line"></div>
+                        <div class="icon-bg">📺</div>
+                        <h2>Queue Display Board</h2>
+                        <p>Live big-screen board showing called ticket numbers and real-time queue status.</p>
+                        <span class="go">Open &nbsp;→</span>
+                    </a>
+
+                    <a class="card demo" href="demo_dashboard.html" target="_blank">
+                        <div class="card-line"></div>
+                        <div class="icon-bg">📊</div>
+                        <h2>Demo Dashboard</h2>
+                        <p>Full admin overview and testing dashboard for monitoring and demonstrations.</p>
+                        <span class="go">Open &nbsp;→</span>
+                    </a>
+
+                </div>
+
+                <div class="status-bar">
+                    <div class="dot" id="dot"></div>
+                    <span id="status-text">Checking server…</span>
+                </div>
+
+                <div class="footer">localhost : 8001 &nbsp;·&nbsp; v1.0.0</div>
+                <div class="footer" style="margin-top:10px; font-size:0.68em;">© 2026 Shewan Dagne &nbsp;·&nbsp; All rights reserved</div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function ping() {
+            const dot = document.getElementById('dot');
+            const text = document.getElementById('status-text');
+            try {
+                const r = await fetch('http://localhost:8001/health', { signal: AbortSignal.timeout(2000) });
+                if (r.ok) {
+                    dot.className = 'dot online';
+                    text.textContent = 'Backend server is online';
+                    text.style.color = 'rgba(129,140,248,0.85)';
+                } else throw 0;
+            } catch {
+                dot.className = 'dot offline';
+                text.textContent = 'Server offline — run: python run_server.py';
+                text.style.color = 'rgba(248,113,113,0.75)';
+            }
+        }
+        ping();
+        setInterval(ping, 5000);
+    </script>
+
+</body>
+
+</html>

@@ -32,7 +32,7 @@ cp .env.example .env
 ### 3. Run the Application
 
 ```bash
-python run_server.py
+python main.py
 ```
 
 The server will start on `http://localhost:8001`
@@ -68,37 +68,20 @@ The server will start on `http://localhost:8001`
 ## 🏗️ Project Structure
 
 ```
-Queue Management System/
-├── main.py                         # FastAPI app — all routes and middleware
-├── database.py                     # SQLAlchemy models (Ticket, Counter, etc.)
-├── models.py                       # Pydantic request/response schemas
-├── utils.py                        # Hashing, QR codes, wait time, fraud detection
-├── config.py                       # Settings (reads .env)
-├── auth.py                         # Role-based token authentication
-├── run_server.py                   # Uvicorn entry point
-├── streamlit_app.py                # Streamlit navigation hub (iframe wrapper)
-│
-├── kiosk_portal.html               # Citizen ticket creation UI
-├── counter_portal.html             # Staff: call / verify / complete
-├── display_portal.html             # Public queue display board (TV screen)
-├── demo_dashboard.html             # Admin dashboard and statistics
-│
-├── telegram_routes.py              # FastAPI router for Telegram webhook
-├── telegram_service.py             # Telegram bot message logic
-├── telegram_models.py              # Telegram Pydantic models
-├── queue_telegram_integration.py   # Appointment reminder scheduler
-├── reminder_scheduler.py           # APScheduler job management
-│
-├── requirements.txt                # Python dependencies
-├── Procfile                        # Cloud deployment process definition
-├── .env.example                    # Environment variables template
-├── ARCHITECTURE.md                 # System architecture diagrams
-│
-├── scripts/                        # Utility and diagnostic scripts
-└── notes/                          # Archived notes (git-ignored)
+Queue Management Standard/
+├── main.py                 # FastAPI application
+├── database.py            # Database models and configuration
+├── models.py              # Pydantic request/response models
+├── utils.py               # Utility functions
+├── config.py              # Configuration settings
+├── requirements.txt       # Python dependencies
+├── .env.example          # Environment variables template
+├── web_portals/          # HTML portals for public information
+└── notes/                # Archived notes and documents
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for full system diagrams and deployment options.
+- `web_portals/` contains HTML files for public information access.
+- `notes/` contains archived notes and documents. This folder is ignored in GitHub pushes.
 
 ## 💾 Database Schema
 

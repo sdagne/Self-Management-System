@@ -9,7 +9,6 @@ from typing import List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -59,22 +58,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ================= PORTAL ROUTES =================
-@app.get("/kiosk")
-async def kiosk_portal():
-    return FileResponse("kiosk_portal.html")
-
-@app.get("/counter")
-async def counter_portal():
-    return FileResponse("counter_portal.html")
-
-@app.get("/display")
-async def display_portal():
-    return FileResponse("display_portal.html")
-
-@app.get("/dashboard")
-async def demo_dashboard():
-    return FileResponse("demo_dashboard.html")
+# ================= STATIC FILES =================
+# Serving from root directly as requested
+app.mount("/web", StaticFiles(directory="."), name="web")
 
 # ================= TELEGRAM INTEGRATION =================
 telegram_integration = None
@@ -313,83 +299,41 @@ async def get_counters(db: Session = Depends(get_db)):
 @app.post("/api/counters/{counter_id}/call-next")
 async def call_next_ticket(counter_id: int, db: Session = Depends(get_db)):
     """Call next ticket in queue for this counter"""
-    logger.info(f"--- Calling Next Ticket (Counter: {counter_id}) ---")
     counter = db.query(Counter).filter(Counter.id == counter_id).first()
     if not counter or not counter.is_active:
-        logger.error(f"Counter {counter_id} not active or not found")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Counter not active")
 
-    # Robust parsing of service types
+    # Robust parsing of service types (strip whitespace and skip empty)
     service_types_list = [st.strip() for st in counter.service_types.split(",") if st.strip()]
-    logger.info(f"Counter Services: {service_types_list}")
     
-    # Debug: Check all waiting tickets for this counter
-    waiting_query = db.query(Ticket).filter(Ticket.status == TicketStatus.WAITING)
-    all_waiting = waiting_query.all()
-    logger.info(f"Total Waiting Tickets: {len(all_waiting)}")
-    
-    now = datetime.utcnow()
-    logger.info(f"Current UTC: {now}")
-
-    # Explicitly check each waiting ticket for debugging
-    for t in all_waiting:
-        match_service = t.service_type.value in service_types_list
-        expired = t.expires_at < now
-        logger.info(f"Checking Ticket {t.ticket_number}: Service={t.service_type.value} (Match={match_service}), Expired={expired}")
-
     # Get next ticket
     next_ticket = db.query(Ticket).filter(
         Ticket.service_type.in_([ServiceType(st) for st in service_types_list]),
         Ticket.status == TicketStatus.WAITING,
-        Ticket.expires_at > now
+        Ticket.expires_at > datetime.utcnow()
     ).order_by(Ticket.created_at).first()
 
     if not next_ticket:
-        logger.warning(f"No valid tickets found for Counter {counter_id}")
         return {"message": "No tickets waiting", "counter_number": counter.counter_number}
 
-    # Find the best available counter: use calling counter if free, otherwise first free active counter
-    assigned_counter = counter
-    if counter.current_ticket_id is not None:
-        busy_ticket = db.query(Ticket).filter(
-            Ticket.id == counter.current_ticket_id,
-            Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING])
-        ).first()
-        if busy_ticket:
-            # Calling counter is busy — find first free counter
-            all_active = db.query(Counter).filter(Counter.is_active == True).order_by(Counter.counter_number).all()
-            for c in all_active:
-                if c.current_ticket_id is None:
-                    assigned_counter = c
-                    break
-                else:
-                    busy = db.query(Ticket).filter(
-                        Ticket.id == c.current_ticket_id,
-                        Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING])
-                    ).first()
-                    if not busy:
-                        assigned_counter = c
-                        break
-
-    logger.info(f"✅ calling Ticket {next_ticket.ticket_number} → Counter {assigned_counter.counter_number}")
     next_ticket.status = TicketStatus.CALLED
-    next_ticket.counter_number = assigned_counter.counter_number
+    next_ticket.counter_number = counter.counter_number
     next_ticket.called_at = datetime.utcnow()
-    assigned_counter.current_ticket_id = next_ticket.id
+    counter.current_ticket_id = next_ticket.id
     db.commit()
 
     db.add(AuditLog(
         action="TICKET_CALLED",
         ticket_id=next_ticket.id,
-        counter_id=assigned_counter.id,
-        details=f"Ticket {next_ticket.ticket_number} called to counter {assigned_counter.counter_number}"
+        counter_id=counter.id,
+        details=f"Ticket {next_ticket.ticket_number} called to counter {counter.counter_number}"
     ))
     db.commit()
 
     return {
         "message": "Ticket called",
         "ticket_number": next_ticket.ticket_number,
-        "counter_number": assigned_counter.counter_number,
+        "counter_number": counter.counter_number,
         "full_name": next_ticket.full_name
     }
 

@@ -2,6 +2,7 @@
 Utility functions for Queue Management System
 """
 import hashlib
+import hmac
 import qrcode
 from io import BytesIO
 import base64
@@ -13,9 +14,9 @@ from config import settings
 def hash_id_number(id_number: str) -> str:
     """
     Hash ID number for privacy and security
-    Uses SHA-256 hashing
+    Uses HMAC-SHA-256 with SECRET_KEY to prevent rainbow table attacks
     """
-    return hashlib.sha256(id_number.encode()).hexdigest()
+    return hmac.new(settings.secret_key.encode(), id_number.encode(), hashlib.sha256).hexdigest()
 
 
 def generate_ticket_number(service_type: str, sequence: int) -> str:

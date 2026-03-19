@@ -10,8 +10,7 @@ env/
 *.db
 queue_management.db
 .env
-.env.local
-.env.production
+.env.*
 
 # IDE/workspace
 .idea/

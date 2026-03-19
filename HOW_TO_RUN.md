@@ -6,7 +6,7 @@
 ```powershell
 # Open PowerShell or Command Prompt
 # Navigate to project directory
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 ```
 
 ### Step 2: Start the Server
@@ -63,7 +63,7 @@ uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 **In a NEW terminal window** (while server is running):
 
 ```powershell
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 python test_api.py
 ```
 
@@ -80,20 +80,20 @@ This will:
 
 ### Terminal 1: Start Server
 ```powershell
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 python run_server.py
 ```
 Leave this running...
 
 ### Terminal 2: Run Tests
 ```powershell
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 python test_api.py
 ```
 
 ### Browser: Open Demo
 ```
-1. Navigate to: D:\Queue Management Standard\demo_dashboard.html
+1. Navigate to: D:\Queue Management System\demo_dashboard.html
 2. Double-click to open in browser
 3. Or visit: http://localhost:8001/docs
 ```
@@ -227,7 +227,7 @@ python run_server.py
 
 ```powershell
 # 1. Navigate to project
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 
 # 2. Install dependencies (first time only)
 pip install -r requirements.txt
@@ -281,7 +281,7 @@ Press CTRL+C to stop the server
 ============================================================
 🚀 Queue Management System v1.0.0 started
 📊 Server running on http://0.0.0.0:8001
-INFO:     Will watch for changes in these directories: ['D:\\Queue Management Standard']
+INFO:     Will watch for changes in these directories: ['D:\\Queue Management System']
 INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
 INFO:     Started reloader process [XXXX] using WatchFiles
 INFO:     Started server process [XXXX]

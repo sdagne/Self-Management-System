@@ -28,9 +28,9 @@ print("✅ Server is online\n")
 print("STEP 1: Creating 3 tickets...\n")
 
 tickets_data = [
-    {"id_number": "DEMO001", "full_name": "Tesfaye Bekele", "service_type": "immigration"},
-    {"id_number": "DEMO002", "full_name": "Almaz Tadesse", "service_type": "passport_renewal"},
-    {"id_number": "DEMO003", "full_name": "Dawit Haile", "service_type": "birth_certificate"}
+    {"id_number": "DEMO001", "full_name": "Shewan Dagne", "service_type": "immigration"},
+    {"id_number": "DEMO002", "full_name": "Addis Dagne", "service_type": "passport_renewal"},
+    {"id_number": "DEMO003", "full_name": "Nathan Dagne", "service_type": "birth_certificate"}
 ]
 
 created_tickets = []

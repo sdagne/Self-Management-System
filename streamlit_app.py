@@ -50,9 +50,9 @@ def start_backend_local():
             st.warning("⚠️ Local Backend is Offline.")
             if st.button("🚀 START BACKEND NOW"):
                 try:
-                    # Use shell=True for better Windows command resolution
-                    cmd = f'"{sys.executable}" run_server.py'
-                    subprocess.Popen(cmd, shell=True, cwd=os.getcwd())
+                    # Using sys.executable to ensure we use the same venv
+                    cmd = [sys.executable, "run_server.py"]
+                    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
                     
                     with st.status("Starting Backend...", expanded=True) as status_box:
                         for i in range(10):

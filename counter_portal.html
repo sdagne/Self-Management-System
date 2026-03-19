@@ -272,10 +272,6 @@
                 <button class="big-button btn-call" onclick="callNextTicket()">
                     CALL NEXT PERSON
                 </button>
-                <button id="reannounceBtn" class="big-button" onclick="reannounce()"
-                    style="display:none; margin-top:8px; background:linear-gradient(135deg,#f093fb,#f5576c); font-size:0.95rem; padding:12px;">
-                    📢 RE-ANNOUNCE (<span id="reannounceCount">0</span>/3)
-                </button>
 
                 <div class="input-group">
                     <label>Verify Ticket</label>
@@ -323,41 +319,6 @@
         refreshQueue();
         refreshStats();
 
-        let currentAnnouncedTicket = null;
-        let currentAnnouncedCounter = null;
-        let announceCallCount = 0;
-
-        function speakTicket(ticketNumber, counterNumber) {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            const msg = new SpeechSynthesisUtterance(
-                `Number ${ticketNumber}, please proceed to counter ${counterNumber}`
-            );
-            msg.lang = 'en-US';
-            msg.rate = 0.9;
-            msg.volume = 1;
-            window.speechSynthesis.speak(msg);
-        }
-
-        function updateReannounceBtn() {
-            const btn = document.getElementById('reannounceBtn');
-            const countSpan = document.getElementById('reannounceCount');
-            if (!currentAnnouncedTicket || announceCallCount >= 3) {
-                btn.style.display = 'none';
-            } else {
-                btn.style.display = 'block';
-                countSpan.textContent = announceCallCount;
-            }
-        }
-
-        function reannounce() {
-            if (!currentAnnouncedTicket || announceCallCount >= 3) return;
-            announceCallCount++;
-            speakTicket(currentAnnouncedTicket, currentAnnouncedCounter);
-            showResult(`📢 Re-announced: ${currentAnnouncedTicket} (${announceCallCount}/3)`, 'info');
-            updateReannounceBtn();
-        }
-
         async function callNextTicket() {
             showResult('Calling next ticket...', 'info');
 
@@ -374,25 +335,17 @@
                         document.getElementById('verifyTicketNumber').value = data.ticket_number;
                         document.getElementById('verifyIdNumber').value = '';
                         showResult(`✅ Now serving: ${data.ticket_number} - ${data.full_name}`, 'success');
-                        // Reset re-announce state for new ticket
-                        currentAnnouncedTicket = data.ticket_number;
-                        currentAnnouncedCounter = data.counter_number;
-                        announceCallCount = 1;
-                        updateReannounceBtn();
-                        speakTicket(data.ticket_number, data.counter_number);
                     } else {
                         showResult('ℹ️ No tickets waiting in queue', 'info');
                         hideCurrentTicket();
-                        currentAnnouncedTicket = null;
-                        updateReannounceBtn();
                     }
                     refreshQueue();
                     refreshStats();
                 } else {
-                    showResult(`❌ Error: ${data.detail || response.status}`, 'error');
+                    showResult(`❌ ${data.detail}`, 'error');
                 }
             } catch (error) {
-                showResult(`❌ Cannot connect to server: ${error.message}`, 'error');
+                showResult('❌ Cannot connect to server', 'error');
             }
         }
 
@@ -474,8 +427,6 @@
 
                 if (response.ok) {
                     hideCurrentTicket();
-                    currentAnnouncedTicket = null;
-                    updateReannounceBtn();
                     document.getElementById('verifyTicketNumber').value = '';
                     document.getElementById('verifyIdNumber').value = '';
                     document.getElementById('completeTicketNumber').value = '';
