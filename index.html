@@ -582,7 +582,7 @@
                     <span id="status-text">Checking server…</span>
                 </div>
 
-                <div class="footer">localhost : 8001 &nbsp;·&nbsp; v1.0.0</div>
+                <div class="footer">san-queue-management-system.onrender.com &nbsp;·&nbsp; v1.0.0</div>
                 <div class="footer" style="margin-top:10px; font-size:0.68em;">© 2026 Shewan Dagne &nbsp;·&nbsp; All rights reserved</div>
 
             </div>
@@ -594,7 +594,7 @@
             const dot = document.getElementById('dot');
             const text = document.getElementById('status-text');
             try {
-                const r = await fetch('http://localhost:8001/health', { signal: AbortSignal.timeout(2000) });
+                const r = await fetch('/health', { signal: AbortSignal.timeout(2000) });
                 if (r.ok) {
                     dot.className = 'dot online';
                     text.textContent = 'Backend server is online';
