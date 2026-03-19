@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Queue Kiosk - Get Your Ticket</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .flag { font-size: 48px; }
+    h1 { color: #1a237e; font-size: 22px; margin-top: 8px; }
+    p.sub { color: #666; font-size: 14px; margin-top: 4px; }
+
+    label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; margin-top: 18px; }
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: #1a237e; }
+
+    .services {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .service-btn {
+      padding: 12px 8px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .service-btn:hover { border-color: #1a237e; color: #1a237e; background: #e8eaf6; }
+    .service-btn.selected { border-color: #1a237e; background: #1a237e; color: #fff; }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      background: #1a237e;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 24px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #0d47a1; }
+    .btn:disabled { background: #9e9e9e; cursor: not-allowed; }
+
+    /* Ticket result */
+    #result { display: none; }
+    .ticket {
+      border: 3px dashed #1a237e;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      margin-top: 8px;
+    }
+    .ticket-number {
+      font-size: 56px;
+      font-weight: 900;
+      color: #1a237e;
+      line-height: 1;
+    }
+    .ticket-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .ticket-info { display: flex; justify-content: space-around; margin-top: 20px; }
+    .ticket-info div { text-align: center; }
+    .ticket-info .val { font-size: 22px; font-weight: 700; color: #1a237e; }
+    .ticket-info .lbl { font-size: 11px; color: #888; }
+    .qr-img { margin-top: 20px; }
+    .qr-img img { max-width: 160px; border-radius: 8px; }
+    .badge {
+      display: inline-block;
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-top: 16px;
+      display: none;
+    }
+    .back-btn {
+      width: 100%;
+      padding: 12px;
+      background: #f5f5f5;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    .back-btn:hover { background: #e0e0e0; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- FORM VIEW -->
+  <div id="form-view">
+    <div class="header">
+      <div class="flag">🇪🇹</div>
+      <h1>Queue Management System</h1>
+      <p class="sub">Enter your details to get a ticket</p>
+    </div>
+
+    <label>Full Name</label>
+    <input type="text" id="full_name" placeholder="e.g. Abebe Girma" />
+
+    <label>ID Number</label>
+    <input type="text" id="id_number" placeholder="Kebele ID, Fayda, or Passport" />
+
+    <label>Phone Number (optional)</label>
+    <input type="tel" id="phone_number" placeholder="+251911234567" />
+
+    <label>Select Service</label>
+    <div class="services">
+      <button class="service-btn" data-value="birth_certificate">🪪 Birth Certificate</button>
+      <button class="service-btn" data-value="tax_service">💰 Tax Service</button>
+      <button class="service-btn" data-value="immigration">✈️ Immigration</button>
+      <button class="service-btn" data-value="business_license">🏢 Business License</button>
+      <button class="service-btn" data-value="passport_renewal">📘 Passport Renewal</button>
+      <button class="service-btn" data-value="document_legalization">📜 Doc. Legalization</button>
+      <button class="service-btn" data-value="other" style="grid-column: span 2;">📋 Other Services</button>
+    </div>
+
+    <div class="error" id="error-msg"></div>
+    <button class="btn" id="submit-btn" onclick="submitTicket()">Get My Ticket</button>
+  </div>
+
+  <!-- TICKET VIEW -->
+  <div id="result">
+    <div class="header">
+      <div class="flag">🇪🇹</div>
+      <h1>Your Ticket</h1>
+      <p class="sub">Please wait — your number will be called</p>
+    </div>
+    <div class="ticket">
+      <div class="ticket-label">Ticket Number</div>
+      <div class="ticket-number" id="r-ticket-number">--</div>
+      <span class="badge" id="r-service">Service</span>
+      <div class="ticket-info">
+        <div>
+          <div class="val" id="r-position">-</div>
+          <div class="lbl">Position</div>
+        </div>
+        <div>
+          <div class="val" id="r-wait">-</div>
+          <div class="lbl">Est. Wait (min)</div>
+        </div>
+      </div>
+      <div class="qr-img" id="qr-container"></div>
+    </div>
+    <button class="back-btn" onclick="resetForm()">← Get Another Ticket</button>
+  </div>
+
+</div>
+
+<script>
+  const API = '';
+  let selectedService = null;
+
+  document.querySelectorAll('.service-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedService = btn.dataset.value;
+    });
+  });
+
+  async function submitTicket() {
+    const full_name = document.getElementById('full_name').value.trim();
+    const id_number = document.getElementById('id_number').value.trim();
+    const phone_number = document.getElementById('phone_number').value.trim();
+    const errEl = document.getElementById('error-msg');
+
+    errEl.style.display = 'none';
+
+    if (!full_name) return showError('Please enter your full name.');
+    if (!id_number) return showError('Please enter your ID number.');
+    if (!selectedService) return showError('Please select a service type.');
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      const res = await fetch(`${API}/api/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, id_number, phone_number: phone_number || null, service_type: selectedService })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to create ticket');
+
+      document.getElementById('r-ticket-number').textContent = data.ticket_number;
+      document.getElementById('r-service').textContent = selectedService.replace(/_/g, ' ').toUpperCase();
+      document.getElementById('r-position').textContent = data.queue_position ?? '-';
+      document.getElementById('r-wait').textContent = data.estimated_wait_minutes ?? '-';
+
+      if (data.qr_code) {
+        document.getElementById('qr-container').innerHTML = `<img src="data:image/png;base64,${data.qr_code}" alt="QR Code" />`;
+      }
+
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('result').style.display = 'block';
+    } catch (err) {
+      showError(err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Get My Ticket';
+    }
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function resetForm() {
+    document.getElementById('form-view').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('full_name').value = '';
+    document.getElementById('id_number').value = '';
+    document.getElementById('phone_number').value = '';
+    document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('selected'));
+    selectedService = null;
+    document.getElementById('error-msg').style.display = 'none';
+  }
+</script>
+</body>
+</html>
