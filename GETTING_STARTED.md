@@ -216,20 +216,20 @@ WAITING → CALLED → SERVING → COMPLETED
 
 ### Scenario 2: Counter Serves Citizen
 
-1. Staff clicks "Call Next"
-2. System displays: `IM-001 - Shewan Dagne`
-3. Citizen approaches counter
-4. Staff scans ID to verify
-5. System confirms: ✅ Verified
-6. Staff provides service
-7. Clicks "Complete"
+>1. Staff clicks "Call Next"
+>2. System displays: `IM-001 - Shewan Dagne`
+>3. Citizen approaches counter
+>4. Staff scans ID to verify
+>5. System confirms: ✅ Verified
+>6. Staff provides service
+>7. Clicks "Complete"
 
 ### Scenario 3: Anti-Fraud Protection
 
-1. Citizen tries to get second ticket
-2. System checks: Active ticket exists
-3. Returns error: `You already have an active ticket: IM-001`
-4. Logs suspicious activity
+>1. Citizen tries to get second ticket
+>2. System checks: Active ticket exists
+>3. Returns error: `You already have an active ticket: IM-001`
+>4. Logs suspicious activity
 
 ---
 
@@ -237,28 +237,28 @@ WAITING → CALLED → SERVING → COMPLETED
 
 ### Tables
 
-1. **citizens** - Citizen information (ID hashed)
-2. **tickets** - All ticket records
-3. **counters** - Service counter configuration
-4. **audit_logs** - Security and fraud detection logs
+>1. **citizens** - Citizen information (ID hashed)
+>2. **tickets** - All ticket records
+>3. **counters** - Service counter configuration
+>4. **audit_logs** - Security and fraud detection logs
 
 ### Key Fields
 
 **Ticket Table**:
-- `ticket_number` - Unique ticket ID (e.g., IM-001)
-- `citizen_id` - Reference to citizen
-- `id_number_hash` - Hashed ID for security
-- `service_type` - Type of service
-- `status` - Current status
-- `expires_at` - Expiration timestamp
-- `qr_code` - Base64 QR code image
+>- `ticket_number` - Unique ticket ID (e.g., IM-001)
+>- `citizen_id` - Reference to citizen
+>- `id_number_hash` - Hashed ID for security
+>- `service_type` - Type of service
+<- `status` - Current status
+>- `expires_at` - Expiration timestamp
+>- `qr_code` - Base64 QR code image
 
 ---
 
 ## 📈 Next Steps (Phase 2 & 3)
 
 ### Phase 2: Enhanced Features
-- [ ] SMS notifications
+>- [ ] SMS notifications
 - [ ] Mobile app for citizens
 - [ ] Thermal printer integration
 - [ ] NFC card reader support
