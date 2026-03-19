@@ -60,7 +60,7 @@ app.add_middleware(
 
 # ================= STATIC FILES =================
 # Serving from root directly as requested
-app.mount("/web", StaticFiles(directory="."), name="web")
+app.mount("/web", StaticFiles(directory=os.path.dirname(os.path.abspath(__file__))), name="web")
 
 # ================= TELEGRAM INTEGRATION =================
 telegram_integration = None
