@@ -379,14 +379,14 @@ This system is designed specifically for Ethiopian needs:
 
 ## 📝 License & Ownership
 
-**Queue Management System - Ethiopia**
+**SAN Queue Management System - Ethiopia**
 Proprietary System - All Rights Reserved
 
 ---
 
-**🎊 Congratulations! Your Queue Management System is ready for pilot deployment!**
+> - **🎊 Congratulations! Your Queue Management System is ready for pilot deployment!**
 
-**Next Action**: Start building the frontend UI or begin pilot testing with a small office.
+> - **Next Action**: Start building the frontend UI or begin pilot testing with a small office.
 
 ---
 
