@@ -345,14 +345,12 @@ CMD ["python", "run_server.py"]
 
 ### Common Issues
 
-**Issue**: Server not starting
-**Solution**: Check if port 8001 is available
-
-**Issue**: Database errors
-**Solution**: Delete `queue_management.db` and restart
-
-**Issue**: Import errors
-**Solution**: Install missing packages from requirements.txt
+>- **Issue**: Server not starting
+>>- **Solution**: Check if port 8001 is available
+>- **Issue**: Database errors
+>>- **Solution**: Delete `queue_management.db` and restart
+>- **Issue**: Import errors
+>>-**Solution**: Install missing packages from requirements.txt
 
 ---
 
