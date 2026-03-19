@@ -30,7 +30,7 @@ Queue Management Standard/
 ### 1. Start the Server
 
 ```powershell
-cd "D:\Queue Management Standard"
+cd "D:\Queue Management System"
 python run_server.py
 ```
 
@@ -55,38 +55,38 @@ python test_api.py
 ### ✅ Phase 1 MVP - COMPLETE
 
 #### 1. **Kiosk System (Ticket Issuing)**
-- ✅ Create tickets with ID verification
-- ✅ One active ticket per person enforcement
-- ✅ QR code generation for each ticket
-- ✅ Queue position calculation
-- ✅ Estimated wait time
-- ✅ Ticket expiration (2 hours)
+>- ✅ Create tickets with ID verification
+>- ✅ One active ticket per person enforcement
+>- ✅ QR code generation for each ticket
+>- ✅ Queue position calculation
+>- ✅ Estimated wait time
+>- ✅ Ticket expiration (2 hours)
 
 #### 2. **Counter Management**
-- ✅ Create and manage service counters
-- ✅ Call next person in queue
-- ✅ ID verification at counter
-- ✅ Complete service workflow
-- ✅ Multi-service type support
+>- ✅ Create and manage service counters
+>- ✅ Call next person in queue
+>- ✅ ID verification at counter
+>- ✅ Complete service workflow
+>- ✅ Multi-service type support
 
 #### 3. **Display System**
-- ✅ Real-time queue status
-- ✅ Now serving display
-- ✅ Waiting count
-- ✅ Daily statistics
+>- ✅ Real-time queue status
+>- ✅ Now serving display
+>- ✅ Waiting count
+>- ✅ Daily statistics
 
 #### 4. **Security & Anti-Fraud**
-- ✅ ID number hashing (SHA-256)
-- ✅ Duplicate ticket prevention
-- ✅ Suspicious activity detection
-- ✅ Audit logging
-- ✅ Blacklist support
+>- ✅ ID number hashing (SHA-256)
+>- ✅ Duplicate ticket prevention
+>- ✅ Suspicious activity detection
+>- ✅ Audit logging
+>- ✅ Blacklist support
 
 #### 5. **Statistics & Analytics**
-- ✅ Daily ticket counts
-- ✅ Service time tracking
-- ✅ Active counter monitoring
-- ✅ Queue performance metrics
+>- ✅ Daily ticket counts
+>- ✅ Service time tracking
+>- ✅ Active counter monitoring
+>- ✅ Queue performance metrics
 
 ---
 
@@ -170,24 +170,24 @@ GET /api/statistics
 
 ## 🔐 Security Features
 
-1. **ID Hashing**: All ID numbers are hashed using SHA-256
-2. **One Active Ticket Rule**: Prevents multiple ticket requests
-3. **Ticket Expiration**: Automatically expires after 2 hours
-4. **Verification Required**: Must verify ID at counter
-5. **Suspicious Activity Detection**: Flags unusual patterns
-6. **Audit Logging**: Complete trail of all actions
+>1. **ID Hashing**: All ID numbers are hashed using SHA-256
+>2. **One Active Ticket Rule**: Prevents multiple ticket requests
+>3. **Ticket Expiration**: Automatically expires after 2 hours
+>4. **Verification Required**: Must verify ID at counter
+>5. **Suspicious Activity Detection**: Flags unusual patterns
+>6. **Audit Logging**: Complete trail of all actions
 
 ---
 
 ## 🎫 Service Types Available
 
-1. `birth_certificate` - Birth Certificate
-2. `tax_service` - Tax Service
-3. `immigration` - Immigration
-4. `business_license` - Business License
-5. `passport_renewal` - Passport Renewal
-6. `document_legalization` - Document Legalization
-7. `other` - Other Services
+>1. `birth_certificate` - Birth Certificate
+>2. `tax_service` - Tax Service
+>3. `immigration` - Immigration
+>4. `business_license` - Business License
+>5. `passport_renewal` - Passport Renewal
+>6. `document_legalization` - Document Legalization
+>7. `other` - Other Services
 
 ---
 
