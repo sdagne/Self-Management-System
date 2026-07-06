@@ -1,0 +1,73 @@
+# pyproject.toml — Tool configuration for Queue Management System
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | __pycache__
+  | migrations
+  | alembic/versions
+)/
+'''
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = [
+    "E203",   # whitespace before ':' (conflicts with black)
+    "W503",   # line break before binary operator (conflicts with black)
+    "E501",   # line too long (handled by black)
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "alembic/versions",
+    "scripts",
+]
+per-file-ignores =
+    "tests/*:S101"   # allow assert in tests
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["alembic/", ".venv/"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    ".venv/*",
+    "venv/*",
+    "tests/*",
+    "alembic/*",
+    "scripts/*",
+    "*/migrations/*",
+    "streamlit_app.py",
+    "demo_*.py",
+    "diagnose_*.py",
+    "final_verify_test.py",
+    "main_new.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 60
+
+[tool.bandit]
+exclude_dirs = [".venv", "tests", "scripts"]
+skips = ["B101"]   # assert usage is fine in tests

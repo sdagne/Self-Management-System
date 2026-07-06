@@ -34,6 +34,7 @@ from utils import (
 from config import settings
 from auth import require_role, exchange_static_token_for_jwt, create_access_token
 from security_headers import SecurityHeadersMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 from telegram_routes import router as telegram_router
 from queue_telegram_integration import QueueTelegramIntegration
 
@@ -79,6 +80,12 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
+
+# ─── Prometheus Metrics ─────────────────────────────────────────────────────────────
+# Exposes /metrics endpoint for Prometheus scraping.
+# In production, protect this with a network-level firewall or a reverse proxy
+# that only allows your Prometheus server to reach /metrics.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", tags=["Monitoring"])
 
 # ================= STATIC FILES =================
 # Serving from root directly as requested
@@ -345,7 +352,11 @@ async def get_ticket_status(ticket_number: str, db: Session = Depends(get_db)):
 # ==================== COUNTER ENDPOINTS ====================
 
 @app.post("/api/counters", response_model=CounterResponse)
-async def create_counter(request: CounterCreateRequest, db: Session = Depends(get_db)):
+async def create_counter(
+    request: CounterCreateRequest,
+    db: Session = Depends(get_db),
+    role: str = Depends(counter_access),
+):
     """Create a new service counter"""
     existing = db.query(Counter).filter(Counter.counter_number == request.counter_number).first()
     if existing:
@@ -364,12 +375,19 @@ async def create_counter(request: CounterCreateRequest, db: Session = Depends(ge
     return counter
 
 @app.get("/api/counters", response_model=List[CounterResponse])
-async def get_counters(db: Session = Depends(get_db)):
+async def get_counters(
+    db: Session = Depends(get_db),
+    role: str = Depends(counter_access),
+):
     """Get all counters"""
     return db.query(Counter).all()
 
 @app.post("/api/counters/{counter_id}/call-next")
-async def call_next_ticket(counter_id: int, db: Session = Depends(get_db)):
+async def call_next_ticket(
+    counter_id: int,
+    db: Session = Depends(get_db),
+    role: str = Depends(counter_access),
+):
     """Call next ticket in queue for this counter"""
     counter = db.query(Counter).filter(Counter.id == counter_id).first()
     if not counter or not counter.is_active:
@@ -501,7 +519,10 @@ async def get_waiting_tickets(db: Session = Depends(get_db)):
     }
 
 @app.get("/api/statistics", response_model=StatisticsResponse)
-async def get_statistics(db: Session = Depends(get_db)):
+async def get_statistics(
+    db: Session = Depends(get_db),
+    role: str = Depends(counter_access),
+):
     """Get system statistics"""
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     total_tickets = db.query(Ticket).filter(Ticket.created_at >= today_start).count()

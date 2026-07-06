@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: queue_app
+    ports:
+      - "8001:8001"
+    environment:
+      - DATABASE_URL=postgresql://queueuser:queuepassword@db:5432/queue_management
+      - APP_ENV=development
+      # Set the following in a .env file or your secrets manager:
+      # SECRET_KEY=
+      # ADMIN_TOKEN=
+      # COUNTER_TOKEN=
+      # DISPLAY_TOKEN=
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - queue_network
+
+  db:
+    image: postgres:15-alpine
+    container_name: queue_db
+    environment:
+      POSTGRES_USER: queueuser
+      POSTGRES_PASSWORD: queuepassword
+      POSTGRES_DB: queue_management
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U queueuser -d queue_management"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - queue_network
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: queue_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - queue_network
+    profiles:
+      - monitoring   # Only started with: docker-compose --profile monitoring up
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: queue_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - queue_network
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  queue_network:
+    driver: bridge
