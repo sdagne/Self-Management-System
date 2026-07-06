@@ -1,43 +1,46 @@
 # Queue Management System - Dependencies
+# ----------------------------------------
+# Pin exact versions to prevent unexpected breaking changes.
+# Run `pip-compile requirements.in` to regenerate after updates.
+
 # Backend API Framework
-fastapi>=0.100.0
-uvicorn[standard]>=0.23.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
 gunicorn==21.2.0
 
 # Database
-sqlalchemy>=2.0.0
-alembic>=1.12.0
+sqlalchemy>=2.0.29
+alembic>=1.13.1
+psycopg2-binary==2.9.9
 
 # Security & Authentication
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
-python-multipart>=0.0.6
+python-multipart>=0.0.9
+
+# Rate Limiting
+slowapi>=0.1.9
+limits>=3.10.0
 
 # ID & QR Code Generation
-qrcode[pil]>=7.4.0
-Pillow>=10.0.0
+qrcode[pil]>=7.4.2
+Pillow>=10.3.0
 
 # Utilities
-python-dotenv>=1.0.0
-httpx>=0.25.0
-
-# Optional: For thermal printer support
-python-escpos>=3.0
-
-# Optional: For OCR ID scanning
-pytesseract>=0.3.10
-
-# Development
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-
-# Deployment
-streamlit>=1.30.0
-psycopg2-binary==2.9.11
-python-telegram-bot[job-queue]>=21.0
-APScheduler>=3.10.0
-python-dotenv>=1.0.0
+python-dotenv>=1.0.1
+httpx>=0.27.0
 pytz>=2024.1
 
+# Telegram Integration
+python-telegram-bot[job-queue]>=21.0
+APScheduler>=3.10.4
+
+# Monitoring
+streamlit>=1.30.0
+
+# ----------------------------------------
+# Development-only (do NOT install in production)
+# pip install -r requirements-dev.txt
+# ----------------------------------------

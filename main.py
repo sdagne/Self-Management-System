@@ -2,24 +2,28 @@
 Main FastAPI application for Queue Management System
 Ethiopia - Queue Management Standard
 """
-import os
 import logging
+import os
 from datetime import datetime
 from typing import List
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
 from database import (
-    get_db, init_db, Ticket, Citizen, Counter, AuditLog, 
+    get_db, init_db, Ticket, Citizen, Counter, AuditLog,
     TicketStatus, ServiceType
 )
 from models import (
     TicketCreateRequest, TicketResponse, TicketVerifyRequest,
-    TicketAssignRequest, CounterCreateRequest, CounterResponse, 
+    TicketAssignRequest, CounterCreateRequest, CounterResponse,
     StatisticsResponse, QueueStatusResponse
 )
 from utils import (
@@ -28,34 +32,52 @@ from utils import (
     detect_suspicious_activity
 )
 from config import settings
-from auth import require_role
+from auth import require_role, exchange_static_token_for_jwt, create_access_token
+from security_headers import SecurityHeadersMiddleware
 from telegram_routes import router as telegram_router
 from queue_telegram_integration import QueueTelegramIntegration
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# ─── Structured logging ─────────────────────────────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"time": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "msg": %(message)s}',
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
+
+# ─── Rate limiter ───────────────────────────────────────────────────────────────────
+limiter = Limiter(key_func=get_remote_address)
 
 # Role-based access dependencies
 counter_access = require_role(["counter", "admin"])
 
-# Initialize FastAPI app
+# ─── Initialize FastAPI app ───────────────────────────────────────────────────────────
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
-    description="Personalized Queue Management System"
+    description="Personalized Queue Management System",
+    docs_url="/docs"    if not settings.is_production else None,
+    redoc_url="/redoc"  if not settings.is_production else None,
+    openapi_url="/openapi.json" if not settings.is_production else None,
 )
 
-# ================= CORS MIDDLEWARE =================
+# ─── Rate Limiting ──────────────────────────────────────────────────────────────────
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# ─── Security Headers (OWASP) ────────────────────────────────────────────────────────
+app.add_middleware(SecurityHeadersMiddleware, is_production=settings.is_production)
+
+# ─── CORS (restricted to configured origins) ─────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*", "null"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.allowed_origins,  # Never allow "*" or "null"
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 # ================= STATIC FILES =================
@@ -96,28 +118,78 @@ async def root():
     return {
         "message": "Queue Management System - Ethiopia",
         "version": settings.version,
-        "status": "operational"
+        "status": "operational",
+        "docs": "/docs" if not settings.is_production else "disabled in production",
     }
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.utcnow()}
 
-@app.get("/status")
+@app.get("/health", tags=["Health"])
+async def health_check(db: Session = Depends(get_db)):
+    """Deep health check for load balancers and uptime monitors."""
+    db_ok = True
+    try:
+        db.execute(__import__("sqlalchemy").text("SELECT 1"))
+    except Exception:
+        db_ok = False
+
+    payload = {
+        "status":    "healthy" if db_ok else "degraded",
+        "version":   settings.version,
+        "timestamp": datetime.utcnow().isoformat(),
+        "checks": {
+            "database": "ok" if db_ok else "error",
+        },
+    }
+    if not db_ok:
+        raise HTTPException(status_code=503, detail=payload)
+    return payload
+
+
+@app.get("/status", tags=["Health"])
 async def server_status():
-    """Endpoint for portals to check if server is online"""
+    """Lightweight liveness probe for portals."""
     return {"server": "online"}
+
+
+# ─── AUTH ─────────────────────────────────────────────────────────────────────────────
+
+from pydantic import BaseModel
+
+class TokenRequest(BaseModel):
+    static_token: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in_minutes: int
+
+@app.post("/api/auth/token", response_model=TokenResponse, tags=["Auth"],
+          summary="Exchange a static API token for a short-lived JWT")
+@limiter.limit("5/minute")
+async def get_jwt_token(request: Request, body: TokenRequest):
+    """
+    Hardware kiosks and counters can call this once at startup to exchange
+    their long-lived static token for a short-lived JWT.
+    """
+    jwt_token = exchange_static_token_for_jwt(body.static_token)
+    if not jwt_token:
+        raise HTTPException(status_code=401, detail="Invalid static token")
+    return TokenResponse(
+        access_token=jwt_token,
+        expires_in_minutes=settings.access_token_expire_minutes,
+    )
 
 # ==================== KIOSK ENDPOINTS ====================
 
 @app.post("/api/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(settings.rate_limit_tickets)
 async def create_ticket(
-    request: TicketCreateRequest,
+    request: Request,
+    body: TicketCreateRequest,
     db: Session = Depends(get_db)
 ):
     """Create a new ticket at kiosk"""
-    id_hash = hash_id_number(request.id_number)
+    id_hash = hash_id_number(body.id_number)
 
     # Check for existing active ticket
     existing_ticket = db.query(Ticket).filter(
@@ -136,8 +208,8 @@ async def create_ticket(
     if not citizen:
         citizen = Citizen(
             id_number_hash=id_hash,
-            full_name=request.full_name,
-            phone_number=request.phone_number
+            full_name=body.full_name,
+            phone_number=body.phone_number
         )
         db.add(citizen)
         db.commit()
@@ -153,7 +225,7 @@ async def create_ticket(
         audit = AuditLog(
             action="SUSPICIOUS_TICKET_REQUEST",
             citizen_id=citizen.id,
-            details=f"Multiple ticket requests detected for {request.full_name}",
+            details=f"Multiple ticket requests detected for {body.full_name}",
             is_suspicious=True
         )
         db.add(audit)
@@ -166,11 +238,11 @@ async def create_ticket(
     # Generate ticket number
     last_ticket = db.query(Ticket).order_by(Ticket.id.desc()).first()
     sequence = (last_ticket.id + 1) if last_ticket else 1
-    ticket_number = generate_ticket_number(request.service_type.value, sequence)
+    ticket_number = generate_ticket_number(body.service_type.value, sequence)
 
     # Calculate queue position
     queue_position = db.query(Ticket).filter(
-        Ticket.service_type == request.service_type,
+        Ticket.service_type == body.service_type,
         Ticket.status == TicketStatus.WAITING
     ).count() + 1
 
@@ -179,8 +251,8 @@ async def create_ticket(
         ticket_number=ticket_number,
         citizen_id=citizen.id,
         id_number_hash=id_hash,
-        full_name=request.full_name,
-        service_type=request.service_type,
+        full_name=body.full_name,
+        service_type=body.service_type,
         status=TicketStatus.WAITING,
         expires_at=calculate_expiry_time()
     )
@@ -188,8 +260,8 @@ async def create_ticket(
     # QR Code data
     ticket_data = {
         "ticket_number": ticket_number,
-        "full_name": request.full_name,
-        "service_type": request.service_type.value,
+        "full_name": body.full_name,
+        "service_type": body.service_type.value,
         "created_at": str(datetime.utcnow())
     }
     new_ticket.qr_code = generate_qr_code(ticket_data)
@@ -203,7 +275,7 @@ async def create_ticket(
         action="TICKET_CREATED",
         citizen_id=citizen.id,
         ticket_id=new_ticket.id,
-        details=f"Ticket {ticket_number} created for {request.service_type.value}"
+        details=f"Ticket {ticket_number} created for {body.service_type.value}"
     )
     db.add(audit)
     db.commit()
