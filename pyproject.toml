@@ -29,8 +29,9 @@ exclude = [
     "alembic/versions",
     "scripts",
 ]
-per-file-ignores =
+per-file-ignores = [
     "tests/*:S101"   # allow assert in tests
+]
 
 [tool.mypy]
 python_version = "3.11"

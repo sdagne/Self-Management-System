@@ -1,0 +1,32 @@
+# Kustomization for base Queue Management System deployment
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: queue-management
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - celery-worker-deployment.yaml
+  - celery-beat-deployment.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - servicemonitor.yaml
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - APP_ENV=production
+      - LOG_LEVEL=info
+      - CORS_ORIGINS=https://queue.example.com
+
+secretGenerator:
+  - name: app-secrets
+    envs:
+      - secrets.env

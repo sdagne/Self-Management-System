@@ -1,15 +1,15 @@
-# 🇪🇹 Queue Management System - Getting Started Guide
+# 🇪🇹 Self Management System - Getting Started Guide
 
 ## ✅ System Status: **FULLY OPERATIONAL**
 
-Congratulations! Your Queue Management System has been successfully implemented and tested.
+Congratulations! Your Self Management System has been successfully implemented and tested.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-Queue Management Standard/
+Self Management Standard/
 ├── main.py                    # Main FastAPI application (565+ lines)
 ├── database.py                # Database models and configuration
 ├── models.py                  # Pydantic request/response models
@@ -379,7 +379,7 @@ This system is designed specifically for Ethiopian needs:
 
 ## 📝 License & Ownership
 
-**SAN Queue Management System - Ethiopia**
+**Self Management System**
 Proprietary System - All Rights Reserved
 
 ---

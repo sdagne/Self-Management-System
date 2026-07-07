@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Management System - Demo Dashboard</title>
+    <title>Self Management System - Demo Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -331,9 +331,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="flag">SAN</div>
-            <h1>Queue Management System</h1>
-            <p>SAN Fair Queue Standard - Demo Dashboard</p>
+             <!-- <div class="flag">SAN</div>-->
+            <h1>Self Management System</h1>
+            <p>Fair Self - Demo Dashboard</p>
             <div style="margin-top: 15px;">
                 <span class="status success" id="serverStatus">Server: Checking...</span>
             </div>
@@ -515,12 +515,27 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8001';
+        const API_BASE = window.location.origin;
+
+        // Extract token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const API_TOKEN = urlParams.get('token');
+
+        // Helper for fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            if (API_TOKEN) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${API_TOKEN}`
+                };
+            }
+            return fetch(url, options);
+        }
 
         // Check server status on load
         async function checkServer() {
             try {
-                const response = await fetch(`${API_BASE}/health`);
+                const response = await fetchWithAuth(`${API_BASE}/health`);
                 const data = await response.json();
                 document.getElementById('serverStatus').textContent = 'Server: Online ✅';
                 document.getElementById('serverStatus').className = 'status success';
@@ -540,7 +555,7 @@
             };
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/tickets`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -570,7 +585,7 @@
             const counterId = document.getElementById('counterId').value;
 
             try {
-                const response = await fetch(`${API_BASE}/api/counters/${counterId}/call-next`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/counters/${counterId}/call-next`, {
                     method: 'POST'
                 });
                 const result = await response.json();
@@ -589,7 +604,7 @@
 
         async function getCounters() {
             try {
-                const response = await fetch(`${API_BASE}/api/counters`);
+                const response = await fetchWithAuth(`${API_BASE}/api/counters`);
                 const result = await response.json();
 
                 document.getElementById('counterResponse').innerHTML = `
@@ -605,7 +620,7 @@
 
         async function getQueueStatus() {
             try {
-                const response = await fetch(`${API_BASE}/api/display/queue-status`);
+                const response = await fetchWithAuth(`${API_BASE}/api/display/queue-status`);
                 const result = await response.json();
 
                 document.getElementById('displayResponse').innerHTML = `
@@ -622,7 +637,7 @@
 
         async function getStatistics() {
             try {
-                const response = await fetch(`${API_BASE}/api/statistics`);
+                const response = await fetchWithAuth(`${API_BASE}/api/statistics`);
                 const result = await response.json();
 
                 document.getElementById('displayResponse').innerHTML = `
@@ -638,10 +653,10 @@
 
         async function refreshQueueStatus() {
             try {
-                const queueResponse = await fetch(`${API_BASE}/api/display/queue-status`);
+                const queueResponse = await fetchWithAuth(`${API_BASE}/api/display/queue-status`);
                 const queueData = await queueResponse.json();
 
-                const statsResponse = await fetch(`${API_BASE}/api/statistics`);
+                const statsResponse = await fetchWithAuth(`${API_BASE}/api/statistics`);
                 const statsData = await statsResponse.json();
 
                 updateLiveDisplay(queueData, statsData);
@@ -651,11 +666,11 @@
         }
 
         function updateLiveDisplay(queueData, statsData = null) {
-            document.getElementById('waitingCount').textContent = queueData.waiting_count;
-            document.getElementById('servedCount').textContent = queueData.total_served_today;
+            document.getElementById('waitingCount').textContent = queueData.waiting_count || 0;
+            document.getElementById('servedCount').textContent = queueData.total_served_today || 0;
 
             if (statsData) {
-                document.getElementById('activeCounters').textContent = statsData.active_counters;
+                document.getElementById('activeCounters').textContent = statsData.active_counters || 0;
             }
 
             const nowServingDiv = document.getElementById('nowServing');
@@ -681,7 +696,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets/active/${idNumber}`);
+                const response = await fetchWithAuth(`${API_BASE}/api/tickets/active/${idNumber}`);
                 const result = await response.json();
 
                 if (response.ok) {
@@ -729,7 +744,7 @@
             }
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets/cancel-by-id?id_number=${idNumber}`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/tickets/cancel-by-id?id_number=${idNumber}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
@@ -761,7 +776,7 @@
         async function refreshWaitingTickets() {
             try {
                 // Fetch waiting tickets from new endpoint
-                const response = await fetch(`${API_BASE}/api/display/waiting-tickets`);
+                const response = await fetchWithAuth(`${API_BASE}/api/display/waiting-tickets`);
                 const data = await response.json();
 
                 const waitingList = document.getElementById('waitingTicketsList');

@@ -1,0 +1,31 @@
+# Production overlay
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: queue-management-prod
+
+namePrefix: prod-
+
+replicas:
+  - name: queue-api
+    count: 5
+  - name: celery-worker
+    count: 3
+
+images:
+  - name: queue-management-api
+    newTag: production
+
+patchesStrategicMerge:
+  - deployment-patch.yaml
+  - ingress-patch.yaml
+
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - APP_ENV=production
+      - LOG_LEVEL=warning

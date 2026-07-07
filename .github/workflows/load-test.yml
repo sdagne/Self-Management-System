@@ -1,0 +1,215 @@
+name: Load Tests
+
+on:
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run nightly at 02:00 UTC against staging
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Target URL to load test"
+        required: false
+        default: "https://queue.staging.example.com"
+      users:
+        description: "Peak concurrent users"
+        required: false
+        default: "100"
+      spawn_rate:
+        description: "User spawn rate (per second)"
+        required: false
+        default: "10"
+      run_time:
+        description: "Test duration (e.g. 60s, 5m)"
+        required: false
+        default: "3m"
+
+env:
+  LOCUST_FILE: tests/load/locustfile.py
+  REPORTS_DIR: reports/load
+
+jobs:
+  # ─── Spin up a local stack for PR runs ──────────────────────────────────────────
+  load-test-local:
+    name: Load Test (local stack)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: queue_user
+          POSTGRES_PASSWORD: queue_pass
+          POSTGRES_DB: queue_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install locust
+
+      - name: Start API server
+        env:
+          DATABASE_URL: postgresql://queue_user:queue_pass@localhost:5432/queue_db
+          REDIS_URL: redis://localhost:6379/0
+          SECRET_KEY: ci-load-test-secret-key-not-for-production
+          ADMIN_TOKEN: test-admin-token
+          COUNTER_TOKEN: test-counter-token
+          DISPLAY_TOKEN: test-display-token
+          APP_ENV: development
+        run: |
+          python -m alembic upgrade head
+          uvicorn main:app --host 0.0.0.0 --port 8001 &
+          echo "⏳ Waiting for API to become ready..."
+          for i in {1..30}; do
+            curl -sf http://localhost:8001/health && echo "✅ API ready" && break
+            sleep 2
+          done
+
+      - name: Run load tests (low volume — PR gate)
+        run: |
+          mkdir -p ${{ env.REPORTS_DIR }}
+          locust \
+            -f ${{ env.LOCUST_FILE }} \
+            --host=http://localhost:8001 \
+            --headless \
+            -u 30 \
+            -r 5 \
+            --run-time 60s \
+            --csv=${{ env.REPORTS_DIR }}/pr \
+            --html=${{ env.REPORTS_DIR }}/pr-report.html \
+            --exit-code-on-error 1
+
+      - name: Upload load test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-report-pr-${{ github.run_number }}
+          path: ${{ env.REPORTS_DIR }}/
+
+      - name: Post results summary to PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const statsFile = '${{ env.REPORTS_DIR }}/pr_stats.csv';
+            if (!fs.existsSync(statsFile)) {
+              console.log('No stats file found, skipping comment');
+              return;
+            }
+            const csv = fs.readFileSync(statsFile, 'utf8');
+            const lines = csv.split('\n').filter(l => l.trim());
+            const header = lines[0].split(',');
+            const rows = lines.slice(1, 4).map(l => l.split(','));
+            let table = '| ' + header.slice(0, 8).join(' | ') + ' |\n';
+            table += '|' + header.slice(0, 8).map(() => '---').join('|') + '|\n';
+            for (const row of rows) {
+              table += '| ' + row.slice(0, 8).join(' | ') + ' |\n';
+            }
+            const body = `## 📊 Load Test Results\n\n${table}\n\n[Full Report (artifact)](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+  # ─── Nightly / manual full load test against staging ────────────────────────────
+  load-test-staging:
+    name: Load Test (staging)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Locust
+        run: pip install locust
+
+      - name: Run load tests (full volume)
+        env:
+          TARGET_URL: ${{ github.event.inputs.target_url || 'https://queue.staging.example.com' }}
+          USERS: ${{ github.event.inputs.users || '100' }}
+          SPAWN_RATE: ${{ github.event.inputs.spawn_rate || '10' }}
+          RUN_TIME: ${{ github.event.inputs.run_time || '3m' }}
+          ADMIN_TOKEN: ${{ secrets.STAGING_ADMIN_TOKEN }}
+          COUNTER_TOKEN: ${{ secrets.STAGING_COUNTER_TOKEN }}
+          DISPLAY_TOKEN: ${{ secrets.STAGING_DISPLAY_TOKEN }}
+        run: |
+          mkdir -p ${{ env.REPORTS_DIR }}
+          locust \
+            -f ${{ env.LOCUST_FILE }} \
+            --host=$TARGET_URL \
+            --headless \
+            -u $USERS \
+            -r $SPAWN_RATE \
+            --run-time $RUN_TIME \
+            --csv=${{ env.REPORTS_DIR }}/staging \
+            --html=${{ env.REPORTS_DIR }}/staging-report.html \
+            --exit-code-on-error 1
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-staging-${{ github.run_number }}
+          path: ${{ env.REPORTS_DIR }}/
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: |
+            ❌ Nightly load test FAILED on staging
+            Branch: ${{ github.ref_name }}
+            Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify Slack on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            ✅ Nightly load test PASSED on staging
+            Branch: ${{ github.ref_name }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

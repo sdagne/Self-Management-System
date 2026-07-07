@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk - Create Ticket | Queue Management System</title>
+    <title>Kiosk - Create Ticket | Management System</title>
     <style>
         * {
             margin: 0;
@@ -222,8 +222,8 @@
 <body>
     <div class="kiosk-container">
         <div class="header">
-            <div class="flag">SAN</div>
-            <h1>Queue Management</h1>
+            <div class="flag">Self</div>
+            <h1>Management</h1>
             <p class="subtitle">Fill the form & Get Your Ticket</p>
         </div>
 
@@ -331,6 +331,21 @@
     <script>
         const API_BASE = window.location.origin;
 
+        // Extract token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const API_TOKEN = urlParams.get('token');
+
+        // Helper for fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            if (API_TOKEN) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${API_TOKEN}`
+                };
+            }
+            return fetch(url, options);
+        }
+
         document.getElementById('ticketForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -348,7 +363,7 @@
             hideResult();
 
             try {
-                const response = await fetch(`${API_BASE}/api/tickets`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/tickets`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

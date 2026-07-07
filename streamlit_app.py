@@ -8,7 +8,7 @@ import sys
 
 # Page configuration
 st.set_page_config(
-    page_title="Ethiopia Queue Management System",
+    page_title="Ethiopia Self Management System",
     page_icon="🎫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -16,7 +16,7 @@ st.set_page_config(
 
 # Sidebar Configuration
 st.sidebar.title("🎫 Queue System")
-st.sidebar.markdown("**Ethiopia Queue Management**")
+st.sidebar.markdown("**Ethiopia Self Management**")
 st.sidebar.markdown("---")
 
 # Deployment Mode Selection
@@ -126,4 +126,4 @@ for i, tab_name in enumerate(["🎫 Kiosk", "💼 Counter", "🖥️ Public Disp
             st.info("Iframe loading... ensure the backend is running.")
 
 st.markdown("---")
-st.caption("Ethiopia Queue Management System - Cloud Hub Beta")
+st.caption("Ethiopia Self Management System - Cloud Hub Beta")

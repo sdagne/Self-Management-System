@@ -1,0 +1,302 @@
+---
+# ── Alertmanager Secret (configuration) ────────────────────────────────────────
+# Store sensitive values (URLs, API keys) in Vault via ExternalSecrets, then
+# reference them here. The alertmanager.yaml key must be a valid Alertmanager config.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-queue-config
+  namespace: queue-management-prod
+  labels:
+    app: alertmanager
+    component: queue-management
+type: Opaque
+stringData:
+  # Alertmanager will load this as its primary config file.
+  # Replace placeholder values with real secrets via ExternalSecrets / Vault.
+  alertmanager.yaml: |
+    global:
+      # How long to wait before re-sending an alert that hasn't been resolved
+      resolve_timeout: 5m
+
+      # SMTP for email notifications
+      smtp_smarthost: "smtp.example.com:587"
+      smtp_from: "alerts@example.com"
+      smtp_auth_username: "alerts@example.com"
+      smtp_auth_password: "REPLACE_WITH_SECRET"   # use ExternalSecret
+      smtp_require_tls: true
+
+      # PagerDuty (set routing_key per receiver below)
+      # pagerduty_url: https://events.pagerduty.com/v2/enqueue
+
+      # Slack webhook (fallback)
+      slack_api_url: "REPLACE_WITH_SLACK_WEBHOOK"   # use ExternalSecret
+
+    templates:
+      - "/etc/alertmanager/templates/*.tmpl"
+
+    # ── Routing tree ──────────────────────────────────────────────────────────
+    route:
+      # Default receiver for all unmatched alerts
+      receiver: slack-general
+      group_by: [alertname, namespace, severity]
+      group_wait: 30s        # Wait to batch alerts in the same group
+      group_interval: 5m     # Minimum time between re-notifications for a group
+      repeat_interval: 4h    # Re-notify if the alert is still firing
+
+      routes:
+        # Critical alerts → PagerDuty (page on-call engineer immediately)
+        - matchers:
+            - severity = critical
+          receiver: pagerduty-critical
+          group_wait: 10s
+          repeat_interval: 1h
+          continue: true   # Also forward to Slack
+
+        # Database alerts → DBA team
+        - matchers:
+            - team = dba
+          receiver: slack-dba
+          group_by: [alertname]
+          repeat_interval: 2h
+
+        # Platform/infra alerts → platform team
+        - matchers:
+            - team = platform
+          receiver: slack-platform
+          repeat_interval: 2h
+
+        # Warning-level alerts → Slack only
+        - matchers:
+            - severity = warning
+          receiver: slack-general
+          repeat_interval: 6h
+
+    # ── Inhibition rules ─────────────────────────────────────────────────────
+    inhibit_rules:
+      # Suppress individual pod alerts when the whole API is down
+      - source_matchers:
+          - alertname = APIDown
+        target_matchers:
+          - alertname =~ "APIHighErrorRate|APIHighLatency|PodCrashLooping"
+        equal: [namespace]
+
+      # Suppress warning when critical is already firing for same alert
+      - source_matchers:
+          - severity = critical
+        target_matchers:
+          - severity = warning
+        equal: [alertname, namespace]
+
+    # ── Receivers ─────────────────────────────────────────────────────────────
+    receivers:
+      - name: slack-general
+        slack_configs:
+          - channel: "#alerts-queue-management"
+            send_resolved: true
+            title: '{{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+            actions:
+              - type: button
+                text: "Runbook 📖"
+                url: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+              - type: button
+                text: "Dashboard 📊"
+                url: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+
+      - name: slack-dba
+        slack_configs:
+          - channel: "#alerts-database"
+            send_resolved: true
+            title: '{{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+
+      - name: slack-platform
+        slack_configs:
+          - channel: "#alerts-platform"
+            send_resolved: true
+            title: '{{ template "slack.title" . }}'
+            text: '{{ template "slack.text" . }}'
+            color: '{{ template "slack.color" . }}'
+
+      - name: pagerduty-critical
+        pagerduty_configs:
+          - routing_key: "REPLACE_WITH_PAGERDUTY_INTEGRATION_KEY"  # use ExternalSecret
+            severity: '{{ if eq .CommonLabels.severity "critical" }}critical{{ else }}warning{{ end }}'
+            description: '{{ range .Alerts }}{{ .Annotations.summary }}: {{ .Annotations.description }}\n{{ end }}'
+            links:
+              - href: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+                text: "Runbook"
+              - href: '{{ (index .Alerts 0).Annotations.dashboard_url }}'
+                text: "Dashboard"
+            client: "Queue Management System"
+            client_url: "https://queue.production.example.com"
+
+      - name: opsgenie-critical
+        opsgenie_configs:
+          - api_key: "REPLACE_WITH_OPSGENIE_API_KEY"   # use ExternalSecret
+            # api_url: https://api.eu.opsgenie.com/   # for EU region
+            message: '{{ template "opsgenie.message" . }}'
+            description: '{{ template "opsgenie.description" . }}'
+            priority: '{{ if eq .CommonLabels.severity "critical" }}P1{{ else }}P3{{ end }}'
+            tags: "queue-management,{{ .CommonLabels.namespace }}"
+            details:
+              runbook: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+
+  # ── Notification templates ───────────────────────────────────────────────────
+  templates.tmpl: |
+    {{ define "slack.color" -}}
+      {{- if eq .Status "firing" -}}
+        {{- if eq .CommonLabels.severity "critical" -}}danger
+        {{- else if eq .CommonLabels.severity "warning" -}}warning
+        {{- else -}}#439FE0
+        {{- end -}}
+      {{- else -}}good
+      {{- end }}
+    {{- end }}
+
+    {{ define "slack.title" -}}
+      [{{ .Status | toUpper }}{{ if eq .Status "firing" }} :{{ .Alerts.Firing | len }}{{ end }}]
+      {{ .CommonLabels.alertname }}
+      ({{ .CommonLabels.namespace }})
+    {{- end }}
+
+    {{ define "slack.text" -}}
+      {{ range .Alerts }}
+      *Summary:* {{ .Annotations.summary }}
+      *Description:* {{ .Annotations.description }}
+      *Severity:* {{ .Labels.severity }}
+      *Since:* {{ .StartsAt | since }}
+      {{ end }}
+    {{- end }}
+
+    {{ define "opsgenie.message" -}}
+      [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }} ({{ .CommonLabels.namespace }})
+    {{- end }}
+
+    {{ define "opsgenie.description" -}}
+      {{ range .Alerts }}{{ .Annotations.summary }}: {{ .Annotations.description }}{{ end }}
+    {{- end }}
+
+---
+# ── Alertmanager Deployment ─────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: queue-management-prod
+  labels:
+    app: alertmanager
+spec:
+  replicas: 2    # HA — two replicas with gossip-based clustering
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9093"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yaml
+            - --storage.path=/alertmanager
+            - --cluster.peer=alertmanager-0.alertmanager-headless:9094
+            - --cluster.peer=alertmanager-1.alertmanager-headless:9094
+            - --web.external-url=https://alertmanager.example.com
+          ports:
+            - name: web
+              containerPort: 9093
+            - name: cluster
+              containerPort: 9094
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/alertmanager
+              readOnly: true
+            - name: templates
+              mountPath: /etc/alertmanager/templates
+              readOnly: true
+            - name: storage
+              mountPath: /alertmanager
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          secret:
+            secretName: alertmanager-queue-config
+            items:
+              - key: alertmanager.yaml
+                path: alertmanager.yaml
+        - name: templates
+          secret:
+            secretName: alertmanager-queue-config
+            items:
+              - key: templates.tmpl
+                path: slack.tmpl
+        - name: storage
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: queue-management-prod
+  labels:
+    app: alertmanager
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - name: web
+      port: 9093
+      targetPort: 9093
+    - name: cluster
+      port: 9094
+      targetPort: 9094
+
+---
+# Headless service for Alertmanager HA clustering (gossip)
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-headless
+  namespace: queue-management-prod
+  labels:
+    app: alertmanager
+spec:
+  clusterIP: None
+  selector:
+    app: alertmanager
+  ports:
+    - name: cluster
+      port: 9094
+      targetPort: 9094

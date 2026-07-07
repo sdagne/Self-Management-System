@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  labels:
+    app: celery-worker
+    component: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+        component: worker
+    spec:
+      containers:
+        - name: worker
+          image: queue-management-api:latest
+          command: ["celery"]
+          args:
+            - "-A"
+            - "app.core.celery_config.celery_app"
+            - "worker"
+            - "--loglevel=info"
+            - "--concurrency=4"
+            - "--max-tasks-per-child=1000"
+          
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: connection-string
+            - name: REDIS_URL
+              value: "redis://redis-service:6379/0"
+            - name: CELERY_BROKER_URL
+              value: "redis://redis-service:6379/1"
+            - name: CELERY_RESULT_BACKEND
+              value: "redis://redis-service:6379/2"
+          
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false

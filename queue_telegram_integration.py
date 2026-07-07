@@ -220,4 +220,5 @@ class QueueTelegramIntegration:
     
     def shutdown(self):
         """Shutdown the integration."""
-        self.reminder_scheduler.shutdown()
+        if hasattr(self, 'reminder_scheduler') and self.reminder_scheduler:
+            self.reminder_scheduler.shutdown()

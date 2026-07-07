@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: queue-api-metrics
+  labels:
+    app: queue-api
+spec:
+  selector:
+    matchLabels:
+      app: queue-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

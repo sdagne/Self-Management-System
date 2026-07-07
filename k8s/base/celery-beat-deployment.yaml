@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+  labels:
+    app: celery-beat
+    component: scheduler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-beat
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+        component: scheduler
+    spec:
+      containers:
+        - name: beat
+          image: queue-management-api:latest
+          command: ["celery"]
+          args:
+            - "-A"
+            - "app.core.celery_config.celery_app"
+            - "beat"
+            - "--loglevel=info"
+          
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          
+          env:
+            - name: CELERY_BROKER_URL
+              value: "redis://redis-service:6379/1"
+          
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000

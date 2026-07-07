@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Counter Staff Portal | Queue Management System</title>
+    <title>Counter Staff Portal | Self Management System</title>
     <style>
         * {
             margin: 0;
@@ -236,7 +236,7 @@
         <div class="header">
             <div>
                 <h1>Counter Staff Portal</h1>
-                <p>Ethiopia Queue Management System</p>
+                <p>Ethiopia Self Management System</p>
             </div>
             <div class="counter-info">
                 <h3>Counter <span id="counterNumber">1</span></h3>
@@ -267,22 +267,22 @@
 
         <div class="grid">
             <div class="card">
-                <h2>Queue Operations</h2>
+                <h2>Self Operations</h2>
 
-                <button class="big-button btn-call" onclick="callNextTicket()">
-                    CALL NEXT PERSON
-                </button>
+              <!--   <button class="big-button btn-call" onclick="callNextTicket()">
+                   CALL NEXT PERSON 
+                </button> -->
 
                 <div class="input-group">
                     <label>Verify Ticket</label>
                     <input type="text" id="verifyTicketNumber" placeholder="Ticket Number (e.g., IM-001)">
                 </div>
                 <div class="input-group">
-                    <label>Verify ID</label>
+                    <label>CALL NEXT PERSON</label>
                     <input type="text" id="verifyIdNumber" placeholder="ID Number">
                 </div>
                 <button class="big-button btn-verify" onclick="verifyTicket()">
-                    VERIFY ID
+                   CALL NEXT PERSON
                 </button>
 
                 <div class="input-group">
@@ -309,16 +309,31 @@
         const API_BASE = window.location.origin;
         let COUNTER_ID = null;
 
+        // Extract token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const API_TOKEN = urlParams.get('token');
+
+        // Helper for fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            if (API_TOKEN) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${API_TOKEN}`
+                };
+            }
+            return fetch(url, options);
+        }
+
         async function initCounter() {
             try {
                 // Get existing counters
-                const res = await fetch(`${API_BASE}/api/counters`);
+                const res = await fetchWithAuth(`${API_BASE}/api/counters`);
                 const counters = await res.json();
                 if (counters.length > 0) {
                     COUNTER_ID = counters[0].id;
                 } else {
                     // Auto-create counter 1 if none exist
-                    const create = await fetch(`${API_BASE}/api/counters`, {
+                    const create = await fetchWithAuth(`${API_BASE}/api/counters`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -351,7 +366,7 @@
             showResult('Calling next ticket...', 'info');
 
             try {
-                const response = await fetch(`${API_BASE}/api/counters/${COUNTER_ID}/call-next`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/counters/${COUNTER_ID}/call-next`, {
                     method: 'POST'
                 });
 
@@ -389,7 +404,7 @@
             showResult('Verifying ticket...', 'info');
 
             try {
-                const response = await fetch(`${API_BASE}/api/counters/${COUNTER_ID}/verify`, {
+                const response = await fetchWithAuth(`${API_BASE}/api/counters/${COUNTER_ID}/verify`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -444,7 +459,7 @@
             try {
                 const url = `${API_BASE}/api/counters/${COUNTER_ID}/complete?ticket_number=${encodeURIComponent(ticketNumber)}`;
 
-                const response = await fetch(url, {
+                const response = await fetchWithAuth(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -488,7 +503,7 @@
 
         async function refreshQueue() {
             try {
-                const response = await fetch(`${API_BASE}/api/display/waiting-tickets`);
+                const response = await fetchWithAuth(`${API_BASE}/api/display/waiting-tickets`);
                 const data = await response.json();
 
                 if (response.ok && Array.isArray(data.tickets)) {
@@ -503,7 +518,7 @@
 
         async function refreshStats() {
             try {
-                const response = await fetch(`${API_BASE}/api/statistics`);
+                const response = await fetchWithAuth(`${API_BASE}/api/statistics`);
                 const data = await response.json();
 
                 if (response.ok) {

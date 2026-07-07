@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-backup
+  namespace: queue-management-prod
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: database-backup
+        spec:
+          serviceAccountName: backup-sa
+          restartPolicy: OnFailure
+          
+          containers:
+            - name: backup
+              image: postgres:15-alpine
+              command: ["/bin/sh"]
+              args:
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/queue_management_${TIMESTAMP}.sql.gz"
+                  
+                  echo "Creating backup..."
+                  PGPASSWORD=$POSTGRES_PASSWORD pg_dump \
+                    -h postgres-service \
+                    -U $POSTGRES_USER \
+                    -d queue_management | gzip > $BACKUP_FILE
+                  
+                  echo "Uploading to S3..."
+                  apk add --no-cache aws-cli
+                  aws s3 cp $BACKUP_FILE "s3://${S3_BUCKET}/postgres/${BACKUP_FILE##*/}"
+                  
+                  echo "Backup completed successfully"
+              
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-credentials
+                      key: username
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-credentials
+                      key: password
+                - name: S3_BUCKET
+                  value: "queue-management-backups"
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-credentials
+                      key: access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: aws-credentials
+                      key: secret-access-key
+                - name: AWS_DEFAULT_REGION
+                  value: "us-east-1"
+              
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          
+          volumes:
+            - name: backup-storage
+              emptyDir: {}

@@ -13,7 +13,7 @@ gunicorn==21.2.0
 # Database
 sqlalchemy>=2.0.29
 alembic>=1.13.1
-psycopg2-binary==2.9.9
+psycopg2-binary>=2.9.10
 
 # Security & Authentication
 python-jose[cryptography]>=3.3.0
@@ -31,6 +31,23 @@ prometheus-fastapi-instrumentator>=6.1.0
 streamlit>=1.30.0
 qrcode[pil]>=7.4.2
 Pillow>=10.3.0
+
+# Caching & Message Queue
+redis>=5.0.0
+celery[redis]>=5.3.0
+kombu>=5.3.0
+flower>=2.0.1  # Celery monitoring UI
+
+# Distributed Tracing (OpenTelemetry)
+opentelemetry-sdk>=1.24.0
+opentelemetry-exporter-otlp-proto-grpc>=1.24.0
+opentelemetry-instrumentation-fastapi>=0.45b0
+opentelemetry-instrumentation-sqlalchemy>=0.45b0
+opentelemetry-instrumentation-redis>=0.45b0
+opentelemetry-instrumentation-celery>=0.45b0
+
+# Load Testing (install only in dev/CI via requirements-dev.txt)
+# locust>=2.28.0
 
 # Utilities
 python-dotenv>=1.0.1

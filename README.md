@@ -68,7 +68,7 @@ The server will start on `http://localhost:8001`
 ## 🏗️ Project Structure
 
 ```
-Queue Management Standard/
+Self Management Standard/
 ├── main.py                 # FastAPI application
 ├── database.py            # Database models and configuration
 ├── models.py              # Pydantic request/response models
@@ -199,7 +199,7 @@ This is a prototype/MVP implementation. Contributions are welcome!
 
 ## 📄 License
 
-Proprietary - Queue Management Standard Ethiopia
+Proprietary - Self Management System
 
 ## 👤 Author & Contact
 

@@ -133,5 +133,8 @@ class ReminderScheduler:
     
     def shutdown(self):
         """Shutdown the scheduler."""
-        self.scheduler.shutdown()
-        logger.info("✅ Reminder scheduler shutdown")
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+            logger.info("✅ Reminder scheduler shutdown")
+        else:
+            logger.debug("Scheduler was not running, skipping shutdown")

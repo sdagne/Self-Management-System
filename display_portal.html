@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Display | Ethiopia Queue Management System</title>
+    <title>Queue Display | Ethiopia Self Management System</title>
     <style>
         * {
             margin: 0;
@@ -204,7 +204,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>SAN Queue Management System</h1>
+        <h1>Self Management System</h1>
         <p class="subtitle">Public Display - Please Wait for Your Number</p>
     </div>
 
@@ -242,6 +242,21 @@
     <script>
         const API_BASE = window.location.origin;
 
+        // Extract token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const API_TOKEN = urlParams.get('token');
+
+        // Helper for fetch with authentication
+        async function fetchWithAuth(url, options = {}) {
+            if (API_TOKEN) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${API_TOKEN}`
+                };
+            }
+            return fetch(url, options);
+        }
+
         // Update time every second
         setInterval(updateTime, 1000);
         updateTime();
@@ -269,7 +284,7 @@
 
         async function refreshDisplay() {
             // Fetch serving status
-            fetch(`${API_BASE}/api/display/queue-status`)
+            fetchWithAuth(`${API_BASE}/api/display/queue-status`)
                 .then(res => res.json())
                 .then(data => {
                     updateServingDisplay(data.now_serving);
@@ -279,7 +294,7 @@
                 .catch(err => console.error('Serving sync error:', err));
 
             // Fetch statistics
-            fetch(`${API_BASE}/api/statistics`)
+            fetchWithAuth(`${API_BASE}/api/statistics`)
                 .then(res => res.json())
                 .then(data => {
                     const avgWait = data.average_service_time_minutes;
@@ -288,7 +303,7 @@
                 .catch(err => console.error('Stats sync error:', err));
 
             // Fetch waiting list
-            fetch(`${API_BASE}/api/display/waiting-tickets`)
+            fetchWithAuth(`${API_BASE}/api/display/waiting-tickets`)
                 .then(res => res.json())
                 .then(data => {
                     updateWaitingDisplay(data.tickets);

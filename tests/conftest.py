@@ -43,19 +43,30 @@ def override_get_db():
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_test_db():
+def setup_test_db(request):
     """Create all tables once for the test session, drop them afterwards."""
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
     # Clean up the test DB file
     import pathlib
-    pathlib.Path("./test_queue.db").unlink(missing_ok=True)
+    # This may fail on Windows if the file is still locked, but it's not critical
+    try:
+        pathlib.Path("./test_queue.db").unlink(missing_ok=True)
+    except PermissionError:
+        print("Could not remove test_queue.db on teardown (likely locked).")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="function")
 def client():
-    """Return a TestClient with the DB dependency overridden."""
+    """
+    Return a TestClient with the DB dependency overridden.
+    Using "function" scope ensures the lifespan events run for each test.
+    """
+    # Reset the database before each test
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app, raise_server_exceptions=True) as c:
         yield c

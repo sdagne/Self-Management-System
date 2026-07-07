@@ -1,20 +1,71 @@
 """
 Database configuration and models
 """
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, Enum as SQLEnum
+import logging
+from sqlalchemy import create_engine, event, Column, Integer, String, DateTime, Boolean, Enum as SQLEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool, StaticPool
 from datetime import datetime
 import enum
 from config import settings
 from sqlalchemy import Column, String, Boolean
 
-# Database setup
+logger = logging.getLogger(__name__)
+
+# ─── Connection Pool Configuration ────────────────────────────────────────────
+# Tuned for production workloads. Adjust based on:
+#   - PostgreSQL max_connections (default 100)
+#   - Number of API worker processes (typically 4–8 with gunicorn)
+#   - Rule of thumb: pool_size = max_connections / num_workers - 2 (buffer)
+
 _db_url = settings.database_url.replace("postgres://", "postgresql://", 1)
-engine = create_engine(
-    _db_url,
-    connect_args={"check_same_thread": False} if "sqlite" in _db_url else {}
-)
+_is_sqlite = "sqlite" in _db_url
+
+if _is_sqlite:
+    # SQLite: use StaticPool for test/dev — no real pooling needed
+    engine = create_engine(
+        _db_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+else:
+    engine = create_engine(
+        _db_url,
+        # ── Pool sizing ─────────────────────────────────────────────────────
+        poolclass=QueuePool,
+        pool_size=10,          # Persistent connections kept open per worker process
+        max_overflow=20,       # Extra connections allowed when pool is exhausted (burst)
+        pool_timeout=30,       # Seconds to wait for a connection before raising PoolTimeout
+        # ── Connection health ────────────────────────────────────────────────
+        pool_recycle=1800,     # Recycle connections after 30 min (prevents stale/dropped conns)
+        pool_pre_ping=True,    # Issue a lightweight SELECT 1 before using a connection
+                               # Automatically reconnects if the DB restarted
+        # ── Logging / echo ───────────────────────────────────────────────────
+        echo=False,            # Set True temporarily to log all SQL (never in production)
+        # ── Connect args ─────────────────────────────────────────────────────
+        connect_args={
+            "connect_timeout": 10,             # TCP connect timeout (seconds)
+            "options": "-c statement_timeout=30000",  # Kill queries running > 30s
+            "application_name": "queue-management-api",  # Visible in pg_stat_activity
+        },
+    )
+
+    # ── Pool event listeners ─────────────────────────────────────────────────
+    @event.listens_for(engine, "connect")
+    def on_connect(dbapi_connection, connection_record):
+        """Run after a new DBAPI connection is established."""
+        logger.debug("New database connection established")
+
+    @event.listens_for(engine, "checkout")
+    def on_checkout(dbapi_connection, connection_record, connection_proxy):
+        """Run each time a connection is retrieved from the pool."""
+        pass  # Hook available for custom metrics/tracing
+
+    @event.listens_for(engine, "checkin")
+    def on_checkin(dbapi_connection, connection_record):
+        """Run each time a connection is returned to the pool."""
+        pass  # Hook available for custom metrics/tracing
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

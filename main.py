@@ -37,7 +37,7 @@ from security_headers import SecurityHeadersMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from telegram_routes import router as telegram_router
 from queue_telegram_integration import QueueTelegramIntegration
-
+from app.core.tracing import setup_tracing
 # ─── Structured logging ─────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -53,6 +53,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Role-based access dependencies
 counter_access = require_role(["counter", "admin"])
+stats_access   = require_role(["counter", "admin", "display"])
 
 # ─── Initialize FastAPI app ───────────────────────────────────────────────────────────
 app = FastAPI(
@@ -63,6 +64,8 @@ app = FastAPI(
     redoc_url="/redoc"  if not settings.is_production else None,
     openapi_url="/openapi.json" if not settings.is_production else None,
 )
+# ─── Distributed Tracing (OpenTelemetry) ──────────────────────────────────────────────
+setup_tracing(app, service_name="queue-management-api")
 
 # ─── Rate Limiting ──────────────────────────────────────────────────────────────────
 app.state.limiter = limiter
@@ -71,6 +74,21 @@ app.add_middleware(SlowAPIMiddleware)
 
 # ─── Security Headers (OWASP) ────────────────────────────────────────────────────────
 app.add_middleware(SecurityHeadersMiddleware, is_production=settings.is_production)
+
+# ─── No-Cache for HTML files (ensures portal updates are always reflected) ───────────
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
+
+class NoCacheHTMLMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: StarletteRequest, call_next):
+        response = await call_next(request)
+        if request.url.path.endswith(".html"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+app.add_middleware(NoCacheHTMLMiddleware)
 
 # ─── CORS (restricted to configured origins) ─────────────────────────────────────────
 app.add_middleware(
@@ -123,7 +141,7 @@ app.include_router(telegram_router)
 async def root():
     """Root endpoint"""
     return {
-        "message": "Queue Management System - Ethiopia",
+        "message": "Self Management System - Ethiopia",
         "version": settings.version,
         "status": "operational",
         "docs": "/docs" if not settings.is_production else "disabled in production",
@@ -521,7 +539,7 @@ async def get_waiting_tickets(db: Session = Depends(get_db)):
 @app.get("/api/statistics", response_model=StatisticsResponse)
 async def get_statistics(
     db: Session = Depends(get_db),
-    role: str = Depends(counter_access),
+    role: str = Depends(stats_access),
 ):
     """Get system statistics"""
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)

@@ -1,0 +1,305 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: queue-management-alerts
+  namespace: queue-management-prod
+  labels:
+    app: queue-management
+    role: alert-rules
+    # Must match your Prometheus Operator's ruleSelector labels
+    prometheus: kube-prometheus
+    release: kube-prometheus-stack
+spec:
+  groups:
+    # ─── API Availability & Errors ────────────────────────────────────────────────
+    - name: api.availability
+      interval: 30s
+      rules:
+        - alert: APIHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="queue-management-prod", status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{namespace="queue-management-prod"}[5m]))
+            ) > 0.01
+          for: 2m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "High HTTP 5xx error rate (> 1%)"
+            description: |
+              Error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+              This exceeds the 1% SLO threshold.
+            runbook_url: "https://github.com/your-org/queue-management/blob/main/runbooks/incident-response.md#high-error-rate"
+            dashboard_url: "https://grafana.example.com/d/queue-overview"
+
+        - alert: APIDown
+          expr: |
+            absent(up{job="queue-management-api", namespace="queue-management-prod"} == 1)
+          for: 1m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Queue Management API is down"
+            description: "No healthy API instances detected in namespace queue-management-prod for > 1 minute."
+            runbook_url: "https://github.com/your-org/queue-management/blob/main/runbooks/incident-response.md#api-down"
+
+        - alert: APIHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{namespace="queue-management-prod"}[5m])) by (le)
+            ) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "High API latency — p95 > 500ms"
+            description: "p95 latency is {{ $value | humanizeDuration }}. SLO is 500ms."
+            runbook_url: "https://github.com/your-org/queue-management/blob/main/runbooks/incident-response.md#high-latency"
+
+        - alert: APIVeryHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{namespace="queue-management-prod"}[5m])) by (le)
+            ) > 2.0
+          for: 2m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Very high API latency — p95 > 2s"
+            description: "p95 latency is {{ $value | humanizeDuration }}. Service is effectively unavailable."
+
+    # ─── Pod & Deployment Health ──────────────────────────────────────────────────
+    - name: kubernetes.pods
+      interval: 60s
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{
+              namespace="queue-management-prod",
+              container=~"queue-api|celery-worker|celery-beat"
+            }[15m]) * 60 > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash-looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has restarted {{ $value | humanize }} times per minute."
+            runbook_url: "https://github.com/your-org/queue-management/blob/main/runbooks/incident-response.md#pod-crash-loop"
+
+        - alert: LowPodCount
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="queue-management-prod",
+              deployment="prod-queue-api"
+            } < 2
+          for: 3m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Queue API has fewer than 2 available replicas"
+            description: "Only {{ $value }} replica(s) available. Minimum HA requirement is 2."
+
+        - alert: PodPendingTooLong
+          expr: |
+            kube_pod_status_phase{
+              namespace="queue-management-prod",
+              phase="Pending"
+            } == 1
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} has been Pending for > 10 minutes"
+            description: "Pod may be unschedulable due to insufficient resources or node issues."
+
+        - alert: HPAMaxedOut
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas{
+              namespace="queue-management-prod"
+            } == kube_horizontalpodautoscaler_spec_max_replicas{
+              namespace="queue-management-prod"
+            }
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "HPA {{ $labels.horizontalpodautoscaler }} is at maximum replicas"
+            description: "Auto-scaling has reached its upper limit. Consider increasing maxReplicas or optimizing the application."
+
+    # ─── Database (PostgreSQL) ────────────────────────────────────────────────────
+    - name: database.health
+      interval: 60s
+      rules:
+        - alert: PostgreSQLDown
+          expr: |
+            absent(up{job="postgres-exporter", namespace="queue-management-prod"} == 1)
+          for: 1m
+          labels:
+            severity: critical
+            team: dba
+          annotations:
+            summary: "PostgreSQL is unreachable"
+            description: "PostgreSQL exporter is not reporting. Database may be down."
+            runbook_url: "https://github.com/your-org/queue-management/blob/main/runbooks/database-operations.md#database-down"
+
+        - alert: PostgreSQLHighConnections
+          expr: |
+            (
+              pg_stat_database_numbackends{datname="queue_db"}
+              / pg_settings_max_connections
+            ) > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            team: dba
+          annotations:
+            summary: "PostgreSQL connection pool > 80% utilised"
+            description: "{{ $value | humanizePercentage }} of max_connections used. Risk of connection exhaustion."
+
+        - alert: PostgreSQLLongRunningQuery
+          expr: |
+            max(pg_stat_activity_max_tx_duration{datname="queue_db", state="active"}) > 300
+          for: 5m
+          labels:
+            severity: warning
+            team: dba
+          annotations:
+            summary: "Long-running PostgreSQL query (> 5 minutes)"
+            description: "A query has been running for {{ $value | humanizeDuration }}. Check pg_stat_activity."
+
+        - alert: PostgreSQLSlowReplication
+          expr: pg_replication_lag > 30
+          for: 5m
+          labels:
+            severity: warning
+            team: dba
+          annotations:
+            summary: "PostgreSQL replication lag > 30s"
+            description: "Replication lag is {{ $value | humanizeDuration }}. Standby is falling behind."
+
+        - alert: DatabaseDiskFull
+          expr: |
+            (
+              kubelet_volume_stats_available_bytes{
+                namespace="queue-management-prod",
+                persistentvolumeclaim="postgres-data"
+              }
+              / kubelet_volume_stats_capacity_bytes{
+                namespace="queue-management-prod",
+                persistentvolumeclaim="postgres-data"
+              }
+            ) < 0.10
+          for: 5m
+          labels:
+            severity: critical
+            team: dba
+          annotations:
+            summary: "Database volume < 10% free"
+            description: "Only {{ $value | humanizePercentage }} disk space remaining on postgres-data PVC."
+
+    # ─── Redis (Cache / Broker) ───────────────────────────────────────────────────
+    - name: redis.health
+      interval: 60s
+      rules:
+        - alert: RedisDown
+          expr: |
+            absent(up{job="redis-exporter", namespace="queue-management-prod"} == 1)
+          for: 1m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "Redis is unreachable"
+            description: "Redis exporter not reporting. Cache and message queue may be unavailable."
+
+        - alert: RedisHighMemory
+          expr: |
+            (redis_memory_used_bytes / redis_memory_max_bytes) > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "Redis memory usage > 85%"
+            description: "Redis is using {{ $value | humanizePercentage }} of allocated memory. Key evictions may start."
+
+        - alert: RedisTooManyConnections
+          expr: redis_connected_clients > 200
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "Redis has too many client connections (> 200)"
+
+    # ─── Celery Workers ───────────────────────────────────────────────────────────
+    - name: celery.workers
+      interval: 60s
+      rules:
+        - alert: CeleryWorkerDown
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace="queue-management-prod",
+              deployment="celery-worker"
+            } == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "All Celery workers are down"
+            description: "No Celery worker pods are available. Async tasks (notifications, reminders) are queued but not processed."
+
+        - alert: CeleryQueueBacklog
+          expr: |
+            celery_queue_length{queue="notifications"} > 500
+          for: 5m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "Celery notifications queue backlog > 500"
+            description: "{{ $value }} tasks queued. Workers may be overloaded or stalled."
+
+    # ─── SLO Burn Rate ────────────────────────────────────────────────────────────
+    - name: slo.burn_rate
+      interval: 60s
+      rules:
+        - alert: SLOBudgetBurnRateCritical
+          # Fast burn: consuming 5% of monthly error budget per hour (14.4x burn rate)
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="queue-management-prod", status=~"5.."}[1h]))
+              / sum(rate(http_requests_total{namespace="queue-management-prod"}[1h]))
+            ) > (0.01 * 14.4)
+          for: 2m
+          labels:
+            severity: critical
+            team: backend
+          annotations:
+            summary: "SLO error budget burning too fast (critical)"
+            description: "At this rate the monthly error budget will be exhausted in < 5 days."
+
+        - alert: SLOBudgetBurnRateHigh
+          # Slow burn: consuming 2% of monthly budget per hour (5.76x burn rate)
+          expr: |
+            (
+              sum(rate(http_requests_total{namespace="queue-management-prod", status=~"5.."}[6h]))
+              / sum(rate(http_requests_total{namespace="queue-management-prod"}[6h]))
+            ) > (0.01 * 5.76)
+          for: 15m
+          labels:
+            severity: warning
+            team: backend
+          annotations:
+            summary: "SLO error budget burning fast (warning)"
+            description: "At this rate the monthly error budget will be exhausted in < 2 weeks."

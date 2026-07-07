@@ -18,10 +18,14 @@ if __name__ == "__main__":
     print("\nPress CTRL+C to stop the server\n")
     print("=" * 60)
 
+    # Disable reload on Windows + Python 3.13 due to a known bug in Uvicorn/Pydantic
+    # related to typing.Annotated in spawned processes.
+    should_reload = os.environ.get("RELOAD", "false").lower() == "true"
+    
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=True
+        reload=should_reload
     )
 

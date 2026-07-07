@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: queue-api-ingress
+spec:
+  tls:
+    - hosts:
+        - queue.production.example.com
+      secretName: prod-queue-api-tls
+  rules:
+    - host: queue.production.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: queue-api-service
+                port:
+                  number: 80
