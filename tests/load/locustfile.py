@@ -5,13 +5,14 @@ CI (headless): locust -f tests/load/locustfile.py --host=$HOST \
                       --headless -u 100 -r 10 --run-time 60s \
                       --csv=reports/load --html=reports/load-report.html
 """
+
 import random
 import string
 from locust import HttpUser, TaskSet, task, between, events
 from locust.runners import MasterRunner
 
-
 # ─── Helpers ────────────────────────────────────────────────────────────────────────
+
 
 def random_id() -> str:
     """Generate a random Ethiopian-style ID number for load tests."""
@@ -20,17 +21,33 @@ def random_id() -> str:
 
 def random_name() -> str:
     names = [
-        "Abebe Kebede", "Tigist Haile", "Dawit Solomon", "Hana Tesfaye",
-        "Yohannes Girma", "Selam Bekele", "Bereket Alemu", "Mekdes Tadesse",
-        "Fiker Worku", "Eyob Mekonnen", "Rahel Gebre", "Natnael Desalegn",
+        "Abebe Kebede",
+        "Tigist Haile",
+        "Dawit Solomon",
+        "Hana Tesfaye",
+        "Yohannes Girma",
+        "Selam Bekele",
+        "Bereket Alemu",
+        "Mekdes Tadesse",
+        "Fiker Worku",
+        "Eyob Mekonnen",
+        "Rahel Gebre",
+        "Natnael Desalegn",
     ]
     return random.choice(names)
 
 
 SERVICE_TYPES = [
-    "kebele_id", "birth_certificate", "passport_renewal", "business_license",
-    "driver_license_renewal", "vehicle_registration", "tax_service",
-    "land_registration", "visa_services", "fayda_id",
+    "kebele_id",
+    "birth_certificate",
+    "passport_renewal",
+    "business_license",
+    "driver_license_renewal",
+    "vehicle_registration",
+    "tax_service",
+    "land_registration",
+    "visa_services",
+    "fayda_id",
 ]
 
 ADMIN_TOKEN = "test-admin-token"
@@ -39,6 +56,7 @@ DISPLAY_TOKEN = "test-display-token"
 
 
 # ─── Task Sets ──────────────────────────────────────────────────────────────────────
+
 
 class PublicKioskTasks(TaskSet):
     """Simulates a self-service kiosk: citizens checking status and creating tickets."""
@@ -122,7 +140,9 @@ class CounterStaffTasks(TaskSet):
 
     @task(5)
     def get_queue_status(self):
-        self.client.get("/api/queue/status", headers=self._auth_headers(), name="/api/queue/status [counter]")
+        self.client.get(
+            "/api/queue/status", headers=self._auth_headers(), name="/api/queue/status [counter]"
+        )
 
     @task(3)
     def call_next_ticket(self):
@@ -171,7 +191,9 @@ class AdminTasks(TaskSet):
 
     @task(4)
     def get_statistics(self):
-        self.client.get("/api/statistics", headers=self._auth_headers(), name="/api/statistics [admin]")
+        self.client.get(
+            "/api/statistics", headers=self._auth_headers(), name="/api/statistics [admin]"
+        )
 
     @task(3)
     def list_counters(self):
@@ -179,17 +201,23 @@ class AdminTasks(TaskSet):
 
     @task(2)
     def get_queue_status(self):
-        self.client.get("/api/queue/status", headers=self._auth_headers(), name="/api/queue/status [admin]")
+        self.client.get(
+            "/api/queue/status", headers=self._auth_headers(), name="/api/queue/status [admin]"
+        )
 
     @task(1)
     def get_audit_logs(self):
-        self.client.get("/api/audit-logs?limit=50", headers=self._auth_headers(), name="/api/audit-logs")
+        self.client.get(
+            "/api/audit-logs?limit=50", headers=self._auth_headers(), name="/api/audit-logs"
+        )
 
 
 # ─── User Classes ────────────────────────────────────────────────────────────────────
 
+
 class KioskUser(HttpUser):
     """Citizen / kiosk user — majority of traffic."""
+
     tasks = [PublicKioskTasks]
     weight = 7
     wait_time = between(1, 3)
@@ -197,6 +225,7 @@ class KioskUser(HttpUser):
 
 class CounterUser(HttpUser):
     """Counter staff — moderate traffic."""
+
     tasks = [CounterStaffTasks]
     weight = 2
     wait_time = between(2, 5)
@@ -204,12 +233,14 @@ class CounterUser(HttpUser):
 
 class AdminUser(HttpUser):
     """Admin — low traffic."""
+
     tasks = [AdminTasks]
     weight = 1
     wait_time = between(5, 15)
 
 
 # ─── Thresholds & CI Failure Hooks ──────────────────────────────────────────────────
+
 
 @events.quitting.add_listener
 def assert_thresholds(environment, **kwargs):

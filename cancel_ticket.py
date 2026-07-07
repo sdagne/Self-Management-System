@@ -2,6 +2,7 @@
 Ticket Management Script - Cancel/Manage Tickets
 Use this script to cancel stuck tickets or manage active tickets
 """
+
 import requests
 import sys
 
@@ -12,8 +13,7 @@ def cancel_ticket(ticket_number, id_number):
     """Cancel a specific ticket"""
     try:
         response = requests.delete(
-            f"{BASE_URL}/api/tickets/{ticket_number}/cancel",
-            params={"id_number": id_number}
+            f"{BASE_URL}/api/tickets/{ticket_number}/cancel", params={"id_number": id_number}
         )
 
         if response.status_code == 200:
@@ -35,8 +35,7 @@ def cancel_all_by_id(id_number):
     """Cancel all active tickets for an ID"""
     try:
         response = requests.delete(
-            f"{BASE_URL}/api/tickets/cancel-by-id",
-            params={"id_number": id_number}
+            f"{BASE_URL}/api/tickets/cancel-by-id", params={"id_number": id_number}
         )
 
         if response.status_code == 200:
@@ -56,21 +55,21 @@ def cancel_all_by_id(id_number):
 def get_active_tickets(id_number):
     """Check what active tickets exist for an ID"""
     try:
-        response = requests.get(
-            f"{BASE_URL}/api/tickets/active/{id_number}"
-        )
+        response = requests.get(f"{BASE_URL}/api/tickets/active/{id_number}")
 
         if response.status_code == 200:
             result = response.json()
             print(f"📋 {result['message']}")
 
-            if result['tickets']:
+            if result["tickets"]:
                 print("\nActive Tickets:")
-                for ticket in result['tickets']:
-                    print(f"   • {ticket['ticket_number']} - {ticket['service_type']} ({ticket['status']})")
+                for ticket in result["tickets"]:
+                    print(
+                        f"   • {ticket['ticket_number']} - {ticket['service_type']} ({ticket['status']})"
+                    )
                     print(f"     Created: {ticket['created_at']}")
                     print(f"     Expires: {ticket['expires_at']}")
-            return result['tickets']
+            return result["tickets"]
         else:
             print(f"❌ Error checking tickets")
             return []
@@ -82,9 +81,7 @@ def get_active_tickets(id_number):
 def force_expire(ticket_number):
     """Force expire a ticket (admin function)"""
     try:
-        response = requests.post(
-            f"{BASE_URL}/api/tickets/{ticket_number}/expire"
-        )
+        response = requests.post(f"{BASE_URL}/api/tickets/{ticket_number}/expire")
 
         if response.status_code == 200:
             result = response.json()
@@ -103,9 +100,9 @@ def force_expire(ticket_number):
 
 def interactive_menu():
     """Interactive menu for ticket management"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🎫 TICKET MANAGEMENT TOOL")
-    print("="*60)
+    print("=" * 60)
     print("\nOptions:")
     print("1. Check active tickets for an ID")
     print("2. Cancel specific ticket")
@@ -153,9 +150,9 @@ def interactive_menu():
 
 def quick_fix_stuck_ticket():
     """Quick fix for stuck tickets - common scenario"""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🔧 QUICK FIX: Cancel Stuck Ticket")
-    print("="*60)
+    print("=" * 60)
     print("\nThis happens when you have an active ticket blocking new ones.")
 
     id_number = input("\nEnter your ID number: ").strip()
@@ -182,9 +179,9 @@ def quick_fix_stuck_ticket():
 
 
 if __name__ == "__main__":
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("🇪🇹 QUEUE MANAGEMENT SYSTEM - Ticket Manager")
-    print("="*60)
+    print("=" * 60)
 
     # Check if server is running
     try:
@@ -222,10 +219,11 @@ if __name__ == "__main__":
             print("  python cancel_ticket.py               - Full interactive menu")
     else:
         # No arguments - show menu
-        mode = input("Choose mode:\n1. Quick Fix (recommended)\n2. Full Menu\n\nSelect (1/2): ").strip()
+        mode = input(
+            "Choose mode:\n1. Quick Fix (recommended)\n2. Full Menu\n\nSelect (1/2): "
+        ).strip()
 
         if mode == "1":
             quick_fix_stuck_ticket()
         else:
             interactive_menu()
-

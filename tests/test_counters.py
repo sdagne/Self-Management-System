@@ -1,4 +1,5 @@
 """Tests for counter management endpoints."""
+
 import pytest
 
 
@@ -13,18 +14,14 @@ def counter_payload(number: int):
 
 class TestCreateCounter:
     def test_create_counter_returns_200(self, client, admin_headers):
-        response = client.post(
-            "/api/counters", json=counter_payload(901), headers=admin_headers
-        )
+        response = client.post("/api/counters", json=counter_payload(901), headers=admin_headers)
         assert response.status_code == 200
         data = response.json()
         assert data["counter_number"] == 901
 
     def test_create_duplicate_counter_returns_400(self, client, admin_headers):
         client.post("/api/counters", json=counter_payload(902), headers=admin_headers)
-        response = client.post(
-            "/api/counters", json=counter_payload(902), headers=admin_headers
-        )
+        response = client.post("/api/counters", json=counter_payload(902), headers=admin_headers)
         assert response.status_code == 400
 
     def test_create_counter_without_auth_returns_401(self, client):
@@ -58,9 +55,7 @@ class TestCallNextTicket:
         counter = next((c for c in counters if c["counter_number"] == 999), None)
         assert counter is not None
 
-        response = client.post(
-            f"/api/counters/{counter['id']}/call-next", headers=admin_headers
-        )
+        response = client.post(f"/api/counters/{counter['id']}/call-next", headers=admin_headers)
         assert response.status_code == 200
         assert "No tickets waiting" in response.json().get("message", "")
 

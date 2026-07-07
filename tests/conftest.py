@@ -6,6 +6,7 @@ Uses an in-memory SQLite database so tests are:
   - Isolated (each test session gets a fresh DB)
   - Independent (no server process required)
 """
+
 import os
 
 import pytest
@@ -42,6 +43,7 @@ def override_get_db():
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db(request):
     """Create all tables once for the test session, drop them afterwards."""
@@ -50,6 +52,7 @@ def setup_test_db(request):
     Base.metadata.drop_all(bind=engine)
     # Clean up the test DB file
     import pathlib
+
     # This may fail on Windows if the file is still locked, but it's not critical
     try:
         pathlib.Path("./test_queue.db").unlink(missing_ok=True)

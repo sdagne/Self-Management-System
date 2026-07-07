@@ -5,6 +5,7 @@ Supports two modes:
   1. Static API Tokens  — for kiosk / counter hardware (no expiry, set in .env)
   2. JWT Bearer Tokens  — for staff portals and admin tools (short-lived, signed)
 """
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -19,6 +20,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 
 # ─── JWT helpers ────────────────────────────────────────────────────────────────
+
 
 def create_access_token(role: str, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -53,6 +55,7 @@ def decode_access_token(token: str) -> Optional[str]:
 
 
 # ─── Dependency ─────────────────────────────────────────────────────────────────
+
 
 def get_current_role(
     credentials: HTTPAuthorizationCredentials = Security(bearer_scheme),
@@ -93,6 +96,7 @@ def get_current_role(
 
 def require_role(required_roles: list[str]):
     """FastAPI dependency factory: only allow callers whose role is in required_roles."""
+
     def wrapper(role: str = Depends(get_current_role)):
         if role not in required_roles:
             raise HTTPException(
@@ -100,10 +104,12 @@ def require_role(required_roles: list[str]):
                 detail="Access forbidden for this role",
             )
         return role
+
     return wrapper
 
 
 # ─── Login endpoint helper ───────────────────────────────────────────────────────
+
 
 def exchange_static_token_for_jwt(static_token: str) -> Optional[str]:
     """

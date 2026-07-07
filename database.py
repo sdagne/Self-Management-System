@@ -1,8 +1,18 @@
 """
 Database configuration and models
 """
+
 import logging
-from sqlalchemy import create_engine, event, Column, Integer, String, DateTime, Boolean, Enum as SQLEnum
+from sqlalchemy import (
+    create_engine,
+    event,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Boolean,
+    Enum as SQLEnum,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
@@ -34,18 +44,18 @@ else:
         _db_url,
         # ── Pool sizing ─────────────────────────────────────────────────────
         poolclass=QueuePool,
-        pool_size=10,          # Persistent connections kept open per worker process
-        max_overflow=20,       # Extra connections allowed when pool is exhausted (burst)
-        pool_timeout=30,       # Seconds to wait for a connection before raising PoolTimeout
+        pool_size=10,  # Persistent connections kept open per worker process
+        max_overflow=20,  # Extra connections allowed when pool is exhausted (burst)
+        pool_timeout=30,  # Seconds to wait for a connection before raising PoolTimeout
         # ── Connection health ────────────────────────────────────────────────
-        pool_recycle=1800,     # Recycle connections after 30 min (prevents stale/dropped conns)
-        pool_pre_ping=True,    # Issue a lightweight SELECT 1 before using a connection
-                               # Automatically reconnects if the DB restarted
+        pool_recycle=1800,  # Recycle connections after 30 min (prevents stale/dropped conns)
+        pool_pre_ping=True,  # Issue a lightweight SELECT 1 before using a connection
+        # Automatically reconnects if the DB restarted
         # ── Logging / echo ───────────────────────────────────────────────────
-        echo=False,            # Set True temporarily to log all SQL (never in production)
+        echo=False,  # Set True temporarily to log all SQL (never in production)
         # ── Connect args ─────────────────────────────────────────────────────
         connect_args={
-            "connect_timeout": 10,             # TCP connect timeout (seconds)
+            "connect_timeout": 10,  # TCP connect timeout (seconds)
             "options": "-c statement_timeout=30000",  # Kill queries running > 30s
             "application_name": "queue-management-api",  # Visible in pg_stat_activity
         },
@@ -66,6 +76,7 @@ else:
     def on_checkin(dbapi_connection, connection_record):
         """Run each time a connection is returned to the pool."""
         pass  # Hook available for custom metrics/tracing
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -133,6 +144,7 @@ class ServiceType(str, enum.Enum):
 # Database Models
 class Citizen(Base):
     """Citizen/User information"""
+
     __tablename__ = "citizens"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -142,12 +154,14 @@ class Citizen(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_blacklisted = Column(Boolean, default=False)
     blacklist_reason = Column(String, nullable=True)
-     # Telegram fields
+    # Telegram fields
     telegram_chat_id = Column(String, nullable=True, unique=True, index=True)
     telegram_notifications_enabled = Column(Boolean, default=True)
 
+
 class Ticket(Base):
     """Ticket information"""
+
     __tablename__ = "tickets"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -166,15 +180,17 @@ class Ticket(Base):
     expires_at = Column(DateTime, nullable=False)
 
     qr_code = Column(String, nullable=True)
-        # Telegram fields
+    # Telegram fields
     telegram_chat_id = Column(String, nullable=True, index=True)
     telegram_notification_sent = Column(Boolean, default=False)
     telegram_reminder_scheduled = Column(Boolean, default=False)
     appointment_date = Column(String, nullable=True)  # Format: YYYY-MM-DD
     appointment_time = Column(String, nullable=True)  # Format: HH:MM
 
+
 class Counter(Base):
     """Service counter information"""
+
     __tablename__ = "counters"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -188,6 +204,7 @@ class Counter(Base):
 
 class AuditLog(Base):
     """Audit trail for security and fraud detection"""
+
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -214,4 +231,3 @@ def get_db():
         yield db
     finally:
         db.close()
-

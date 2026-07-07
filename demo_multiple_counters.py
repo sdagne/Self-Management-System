@@ -2,14 +2,15 @@
 Quick Demo: Create tickets and call from different counters
 This will show the display working with multiple counters
 """
+
 import requests
 import time
 
 API_BASE = "http://localhost:8001"
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("DEMO: Multiple Counters on Display")
-print("="*70 + "\n")
+print("=" * 70 + "\n")
 
 # Check server
 try:
@@ -30,7 +31,7 @@ print("STEP 1: Creating 3 tickets...\n")
 tickets_data = [
     {"id_number": "DEMO001", "full_name": "Shewan Dagne", "service_type": "immigration"},
     {"id_number": "DEMO002", "full_name": "Addis Dagne", "service_type": "passport_renewal"},
-    {"id_number": "DEMO003", "full_name": "Nathan Dagne", "service_type": "birth_certificate"}
+    {"id_number": "DEMO003", "full_name": "Nathan Dagne", "service_type": "birth_certificate"},
 ]
 
 created_tickets = []
@@ -56,36 +57,40 @@ if len(created_tickets) < 2:
 time.sleep(2)
 
 # Step 2: Call tickets from different counters
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("STEP 2: Calling tickets from DIFFERENT counters...\n")
 
 counters_to_call = [
     {"counter_id": 1, "counter_name": "Counter 1 (Immigration)"},
     {"counter_id": 2, "counter_name": "Counter 2 (Passport)"},
-    {"counter_id": 3, "counter_name": "Counter 3 (Documents)"}
+    {"counter_id": 3, "counter_name": "Counter 3 (Documents)"},
 ]
 
 called_tickets = []
 
-for counter in counters_to_call[:len(created_tickets)]:
+for counter in counters_to_call[: len(created_tickets)]:
     try:
         response = requests.post(f"{API_BASE}/api/counters/{counter['counter_id']}/call-next")
         if response.status_code == 200:
             result = response.json()
-            if 'ticket_number' in result:
-                called_tickets.append({
-                    'ticket': result['ticket_number'],
-                    'counter': counter['counter_id'],
-                    'name': result['full_name']
-                })
-                print(f"✅ {counter['counter_name']} called: {result['ticket_number']} - {result['full_name']}")
+            if "ticket_number" in result:
+                called_tickets.append(
+                    {
+                        "ticket": result["ticket_number"],
+                        "counter": counter["counter_id"],
+                        "name": result["full_name"],
+                    }
+                )
+                print(
+                    f"✅ {counter['counter_name']} called: {result['ticket_number']} - {result['full_name']}"
+                )
             else:
                 print(f"ℹ️  {counter['counter_name']}: {result['message']}")
         else:
             print(f"❌ Failed to call from {counter['counter_name']}")
     except Exception as e:
         print(f"❌ Error calling from {counter['counter_name']}: {e}")
-    
+
     time.sleep(1)
 
 if not called_tickets:
@@ -95,32 +100,34 @@ if not called_tickets:
 time.sleep(2)
 
 # Step 3: Check what the display will show
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("STEP 3: Checking display data...\n")
 
 try:
     response = requests.get(f"{API_BASE}/api/display/queue-status")
     if response.status_code == 200:
         data = response.json()
-        
+
         print("NOW SERVING (what display_portal.html will show):")
         print("-" * 70)
-        
-        if data['now_serving']:
-            for ticket in data['now_serving']:
-                print(f"  Ticket: {ticket['ticket_number']:<10} Counter: {ticket['counter_number']}")
+
+        if data["now_serving"]:
+            for ticket in data["now_serving"]:
+                print(
+                    f"  Ticket: {ticket['ticket_number']:<10} Counter: {ticket['counter_number']}"
+                )
         else:
             print("  (No tickets being served)")
-        
+
         print()
-        
+
 except Exception as e:
     print(f"❌ Error checking display: {e}")
 
 # Step 4: Instructions
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("STEP 4: NOW OPEN display_portal.html")
-print("="*70 + "\n")
+print("=" * 70 + "\n")
 
 print("You should see:")
 for ticket in called_tickets:
@@ -135,8 +142,7 @@ print("  ✅ Open counter_portal.html (Counter 1)")
 print("  ✅ Open counter_portal_2.html (Counter 2)")
 print("  ✅ Open counter_portal_3.html (Counter 3)")
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("✅ Demo Complete!")
-print("="*70)
+print("=" * 70)
 print("\nNow refresh display_portal.html to see the different counter numbers!\n")
-

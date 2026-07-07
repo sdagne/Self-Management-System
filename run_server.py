@@ -1,6 +1,7 @@
 """
 Start the Queue Management System server
 """
+
 import uvicorn
 from config import settings
 import os
@@ -21,11 +22,5 @@ if __name__ == "__main__":
     # Disable reload on Windows + Python 3.13 due to a known bug in Uvicorn/Pydantic
     # related to typing.Annotated in spawned processes.
     should_reload = os.environ.get("RELOAD", "false").lower() == "true"
-    
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=should_reload
-    )
 
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=should_reload)

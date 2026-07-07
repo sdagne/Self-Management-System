@@ -2,6 +2,7 @@
 Test script for Queue Management System
 Run this to test the API endpoints
 """
+
 import requests
 import time
 
@@ -17,14 +18,12 @@ def cleanup_old_tickets():
     for id_number in test_ids:
         try:
             response = requests.delete(
-                f"{BASE_URL}/api/tickets/cancel-by-id",
-                params={"id_number": id_number},
-                timeout=3
+                f"{BASE_URL}/api/tickets/cancel-by-id", params={"id_number": id_number}, timeout=3
             )
             if response.status_code == 200:
                 result = response.json()
-                if result.get('cancelled_tickets'):
-                    cleaned += len(result['cancelled_tickets'])
+                if result.get("cancelled_tickets"):
+                    cleaned += len(result["cancelled_tickets"])
         except:
             pass  # Ignore errors during cleanup
 
@@ -51,7 +50,7 @@ def test_create_ticket():
         "id_number": "ABC123456",
         "full_name": "Tesfaye Bekele",
         "service_type": "immigration",
-        "phone_number": "+251911234567"
+        "phone_number": "+251911234567",
     }
     response = requests.post(f"{BASE_URL}/api/tickets", json=data)
     print(f"Status: {response.status_code}")
@@ -88,7 +87,7 @@ def test_create_counter():
         "counter_number": 1,
         "counter_name": "Immigration Counter 1",
         "service_types": ["immigration", "passport_renewal"],
-        "staff_name": "Almaz Worku"
+        "staff_name": "Almaz Worku",
     }
     response = requests.post(f"{BASE_URL}/api/counters", json=data)
     print(f"Status: {response.status_code}")
@@ -112,7 +111,7 @@ def test_call_next_ticket(counter_id):
     if response.status_code == 200:
         result = response.json()
         print(f"[OK] {result['message']}")
-        if 'ticket_number' in result:
+        if "ticket_number" in result:
             print(f"   Now Serving: {result['ticket_number']}")
             print(f"   Citizen: {result['full_name']}")
             print(f"   Counter: {result['counter_number']}")
@@ -123,10 +122,7 @@ def test_call_next_ticket(counter_id):
 def test_verify_ticket(counter_id, ticket_number, id_number):
     """Test ticket verification"""
     print(f"\n[VERIFY] Verifying Ticket at Counter...")
-    data = {
-        "ticket_number": ticket_number,
-        "id_number": id_number
-    }
+    data = {"ticket_number": ticket_number, "id_number": id_number}
     response = requests.post(f"{BASE_URL}/api/counters/{counter_id}/verify", json=data)
     print(f"Status: {response.status_code}")
     result = response.json()
@@ -219,10 +215,10 @@ def run_full_demo():
         print("Serving First Ticket...")
         print("=" * 60)
 
-        called = test_call_next_ticket(counter['id'])
-        if called and 'ticket_number' in called:
+        called = test_call_next_ticket(counter["id"])
+        if called and "ticket_number" in called:
             time.sleep(1)
-            test_verify_ticket(counter['id'], tickets[0]['ticket_number'], citizens[0]['id_number'])
+            test_verify_ticket(counter["id"], tickets[0]["ticket_number"], citizens[0]["id_number"])
 
     # Test 6: Statistics
     time.sleep(1)
@@ -259,4 +255,3 @@ if __name__ == "__main__":
         print("Make sure the server is running: python main.py")
     except Exception as e:
         print(f"\n[ERROR] Error: {e}")
-

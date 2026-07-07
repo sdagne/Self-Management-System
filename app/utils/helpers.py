@@ -1,6 +1,7 @@
 """
 Utility / helper functions for Self Management System.
 """
+
 import base64
 import hashlib
 import hmac
@@ -127,19 +128,27 @@ def detect_suspicious_activity(citizen_id: int, db_session) -> bool:
     from datetime import datetime, timedelta
 
     recent_time = datetime.utcnow() - timedelta(hours=1)
-    recent_active = db_session.query(Ticket).filter(
-        Ticket.citizen_id == citizen_id,
-        Ticket.created_at >= recent_time,
-        Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING]),
-    ).count()
+    recent_active = (
+        db_session.query(Ticket)
+        .filter(
+            Ticket.citizen_id == citizen_id,
+            Ticket.created_at >= recent_time,
+            Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING]),
+        )
+        .count()
+    )
 
     if recent_active >= 5:
         return True
 
-    failed = db_session.query(Ticket).filter(
-        Ticket.citizen_id == citizen_id,
-        Ticket.status.in_([TicketStatus.CANCELLED, TicketStatus.EXPIRED]),
-    ).count()
+    failed = (
+        db_session.query(Ticket)
+        .filter(
+            Ticket.citizen_id == citizen_id,
+            Ticket.status.in_([TicketStatus.CANCELLED, TicketStatus.EXPIRED]),
+        )
+        .count()
+    )
 
     if failed >= 10:
         return True

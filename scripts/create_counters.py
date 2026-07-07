@@ -17,7 +17,7 @@ for number in range(1, COUNTERS_TO_CREATE + 1):
         "counter_number": number,
         "counter_name": f"Counter {number}",
         "service_types": SERVICE_TYPES,
-        "staff_name": f"Staff {number}"
+        "staff_name": f"Staff {number}",
     }
 
     try:
@@ -28,10 +28,12 @@ for number in range(1, COUNTERS_TO_CREATE + 1):
 
     if response.ok:
         print(f"[{number}] Created {payload['counter_name']}")
-    elif response.status_code == 400 and response.json().get("detail") == "Counter number already exists":
+    elif (
+        response.status_code == 400
+        and response.json().get("detail") == "Counter number already exists"
+    ):
         print(f"[{number}] Already exists")
     else:
         print(f"[{number}] Unexpected response {response.status_code}: {response.text}")
 
     time.sleep(0.05)
-

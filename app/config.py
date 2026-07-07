@@ -2,10 +2,9 @@
 Configuration settings for Queue Management System.
 Single source of truth — all other modules import from here.
 """
+
 from pydantic_settings import BaseSettings
-from typing import Optional
 from dotenv import load_dotenv
-import os
 import warnings
 
 load_dotenv()

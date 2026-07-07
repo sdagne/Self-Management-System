@@ -1,15 +1,16 @@
 """
 Diagnostic script to check what's in the database
 """
+
 import sqlite3
 
 # Connect to database
-conn = sqlite3.connect('queue_management.db')
+conn = sqlite3.connect("queue_management.db")
 cursor = conn.cursor()
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("DIAGNOSTIC: Current Tickets in Database")
-print("="*60 + "\n")
+print("=" * 60 + "\n")
 
 # Get all active tickets
 cursor.execute("""
@@ -33,9 +34,9 @@ else:
         counter_display = str(counter) if counter else "None"
         print(f"{ticket_num:<15} {counter_display:<10} {status:<15} {name}")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("DIAGNOSTIC: Counters in Database")
-print("="*60 + "\n")
+print("=" * 60 + "\n")
 
 # Get all counters
 cursor.execute("""
@@ -58,11 +59,13 @@ else:
         active_display = "Yes" if is_active else "No"
         ticket_display = str(current_ticket_id) if current_ticket_id else "None"
         staff_display = staff if staff else "N/A"
-        print(f"{counter_num:<12} {name:<25} {active_display:<10} {ticket_display:<15} {staff_display}")
+        print(
+            f"{counter_num:<12} {name:<25} {active_display:<10} {ticket_display:<15} {staff_display}"
+        )
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("ISSUE DIAGNOSIS")
-print("="*60 + "\n")
+print("=" * 60 + "\n")
 
 # Check for tickets with counter_number = 1
 cursor.execute("""
@@ -100,7 +103,6 @@ if count_other_counters == 0 and count_counter_1 > 0:
     print("   Create more counters using the counter portal or demo dashboard.")
     print("   Each counter will then call tickets and assign them properly.")
 
-print("\n" + "="*60 + "\n")
+print("\n" + "=" * 60 + "\n")
 
 conn.close()
-

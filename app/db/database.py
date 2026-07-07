@@ -1,13 +1,19 @@
 """
 Database configuration, connection pooling, and SQLAlchemy models.
 """
+
 import logging
 import enum
 from datetime import datetime
 
 from sqlalchemy import (
-    create_engine, event,
-    Column, Integer, String, DateTime, Boolean,
+    create_engine,
+    event,
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Boolean,
     Enum as SQLEnum,
 )
 from sqlalchemy.ext.declarative import declarative_base
@@ -49,11 +55,13 @@ else:
     def on_connect(dbapi_connection, connection_record):
         logger.debug("New database connection established")
 
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
 # ─── Enums ───────────────────────────────────────────────────────────────────────
+
 
 class TicketStatus(str, enum.Enum):
     WAITING = "waiting"
@@ -97,6 +105,7 @@ class ServiceType(str, enum.Enum):
 
 
 # ─── ORM Models ─────────────────────────────────────────────────────────────────
+
 
 class Citizen(Base):
     __tablename__ = "citizens"
@@ -163,6 +172,7 @@ class AuditLog(Base):
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────────
+
 
 def init_db():
     """Initialize database tables."""

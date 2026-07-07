@@ -3,7 +3,7 @@ from queue_telegram_integration import QueueTelegramIntegration
 import os
 
 # Initialize the integration (do this once at app startup)
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')  # Store token in environment variable
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Store token in environment variable
 telegram_integration = QueueTelegramIntegration(TELEGRAM_BOT_TOKEN)
 
 
@@ -11,15 +11,15 @@ telegram_integration = QueueTelegramIntegration(TELEGRAM_BOT_TOKEN)
 def register_immediate_service(chat_id, queue_name):
     """Register a ticket for immediate service."""
     ticket_number = generate_ticket_number()  # Your function
-    
+
     result = telegram_integration.register_ticket_sync(
         chat_id=chat_id,
         ticket_number=ticket_number,
         queue_name=queue_name,
         estimated_wait_time="15-20 minutes",
-        service_counter="Counter 3"
+        service_counter="Counter 3",
     )
-    
+
     print(result)
     return ticket_number
 
@@ -28,7 +28,7 @@ def register_immediate_service(chat_id, queue_name):
 def register_appointment_service(chat_id, queue_name, appointment_date, appointment_time):
     """Register an appointment for a future date."""
     ticket_number = generate_ticket_number()  # Your function
-    
+
     result = telegram_integration.register_ticket_sync(
         chat_id=chat_id,
         ticket_number=ticket_number,
@@ -36,9 +36,9 @@ def register_appointment_service(chat_id, queue_name, appointment_date, appointm
         appointment_date=appointment_date,  # Format: YYYY-MM-DD
         appointment_time=appointment_time,  # Format: HH:MM
         service_counter="Counter 1",
-        instructions="Please bring your ID and documents"
+        instructions="Please bring your ID and documents",
     )
-    
+
     print(result)
     return ticket_number
 
@@ -47,15 +47,15 @@ def register_appointment_service(chat_id, queue_name, appointment_date, appointm
 async def register_appointment_async(chat_id, queue_name, appointment_date):
     """Register appointment using async."""
     ticket_number = generate_ticket_number()
-    
+
     result = await telegram_integration.register_ticket_async(
         chat_id=chat_id,
         ticket_number=ticket_number,
         queue_name=queue_name,
         appointment_date=appointment_date,
-        estimated_wait_time="10 minutes"
+        estimated_wait_time="10 minutes",
     )
-    
+
     return result
 
 

@@ -2,10 +2,10 @@
 Main FastAPI application for Queue Management System
 Ethiopia - Queue Management Standard
 """
+
 import logging
 import os
 from datetime import datetime
-from typing import List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Request, status
@@ -17,19 +17,25 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-from database import (
-    get_db, init_db, Ticket, Citizen, Counter, AuditLog,
-    TicketStatus, ServiceType
-)
+from database import get_db, init_db, Ticket, Citizen, Counter, AuditLog, TicketStatus, ServiceType
 from models import (
-    TicketCreateRequest, TicketResponse, TicketVerifyRequest,
-    TicketAssignRequest, CounterCreateRequest, CounterResponse,
-    StatisticsResponse, QueueStatusResponse
+    TicketCreateRequest,
+    TicketResponse,
+    TicketVerifyRequest,
+    TicketAssignRequest,
+    CounterCreateRequest,
+    CounterResponse,
+    StatisticsResponse,
+    QueueStatusResponse,
 )
 from utils import (
-    hash_id_number, generate_ticket_number, generate_qr_code,
-    calculate_expiry_time, is_ticket_expired, estimate_wait_time,
-    detect_suspicious_activity
+    hash_id_number,
+    generate_ticket_number,
+    generate_qr_code,
+    calculate_expiry_time,
+    is_ticket_expired,
+    estimate_wait_time,
+    detect_suspicious_activity,
 )
 from config import settings
 from auth import require_role, exchange_static_token_for_jwt, create_access_token
@@ -38,6 +44,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from telegram_routes import router as telegram_router
 from queue_telegram_integration import QueueTelegramIntegration
 from app.core.tracing import setup_tracing
+
 # ─── Structured logging ─────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -53,19 +60,19 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Role-based access dependencies
 counter_access = require_role(["counter", "admin"])
-stats_access   = require_role(["counter", "admin", "display"])
+stats_access = require_role(["counter", "admin", "display"])
 
 # ─── Initialize FastAPI app ───────────────────────────────────────────────────────────
 app = FastAPI(
     title=settings.app_name,
     version=settings.version,
-    description="Personalized Queue Management System",
-    docs_url="/docs"    if not settings.is_production else None,
-    redoc_url="/redoc"  if not settings.is_production else None,
+    description="Personalized Self Management System",
+    docs_url="/docs" if not settings.is_production else None,
+    redoc_url="/redoc" if not settings.is_production else None,
     openapi_url="/openapi.json" if not settings.is_production else None,
 )
 # ─── Distributed Tracing (OpenTelemetry) ──────────────────────────────────────────────
-setup_tracing(app, service_name="queue-management-api")
+setup_tracing(app, service_name="self-management-api")
 
 # ─── Rate Limiting ──────────────────────────────────────────────────────────────────
 app.state.limiter = limiter
@@ -79,6 +86,7 @@ app.add_middleware(SecurityHeadersMiddleware, is_production=settings.is_producti
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request as StarletteRequest
 
+
 class NoCacheHTMLMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: StarletteRequest, call_next):
         response = await call_next(request)
@@ -87,6 +95,7 @@ class NoCacheHTMLMiddleware(BaseHTTPMiddleware):
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
         return response
+
 
 app.add_middleware(NoCacheHTMLMiddleware)
 
@@ -120,12 +129,14 @@ if settings.TELEGRAM_ENABLED and settings.TELEGRAM_BOT_TOKEN:
 else:
     logger.warning("⚠️ Telegram notifications disabled or token missing")
 
+
 # ================= STARTUP & SHUTDOWN =================
 @app.on_event("startup")
 async def startup_event():
     """Initialize database and services on startup"""
     init_db()
     logger.info("✅ Database initialized")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -134,8 +145,10 @@ async def shutdown_event():
         telegram_integration.shutdown()
         logger.info("✅ Telegram integration shutdown")
 
+
 # ================= ROUTES =================
 app.include_router(telegram_router)
+
 
 @app.get("/")
 async def root():
@@ -158,8 +171,8 @@ async def health_check(db: Session = Depends(get_db)):
         db_ok = False
 
     payload = {
-        "status":    "healthy" if db_ok else "degraded",
-        "version":   settings.version,
+        "status": "healthy" if db_ok else "degraded",
+        "version": settings.version,
         "timestamp": datetime.utcnow().isoformat(),
         "checks": {
             "database": "ok" if db_ok else "error",
@@ -180,16 +193,23 @@ async def server_status():
 
 from pydantic import BaseModel
 
+
 class TokenRequest(BaseModel):
     static_token: str
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     expires_in_minutes: int
 
-@app.post("/api/auth/token", response_model=TokenResponse, tags=["Auth"],
-          summary="Exchange a static API token for a short-lived JWT")
+
+@app.post(
+    "/api/auth/token",
+    response_model=TokenResponse,
+    tags=["Auth"],
+    summary="Exchange a static API token for a short-lived JWT",
+)
 @limiter.limit("5/minute")
 async def get_jwt_token(request: Request, body: TokenRequest):
     """
@@ -204,37 +224,37 @@ async def get_jwt_token(request: Request, body: TokenRequest):
         expires_in_minutes=settings.access_token_expire_minutes,
     )
 
+
 # ==================== KIOSK ENDPOINTS ====================
+
 
 @app.post("/api/tickets", response_model=TicketResponse, status_code=status.HTTP_201_CREATED)
 @limiter.limit(settings.rate_limit_tickets)
-async def create_ticket(
-    request: Request,
-    body: TicketCreateRequest,
-    db: Session = Depends(get_db)
-):
+async def create_ticket(request: Request, body: TicketCreateRequest, db: Session = Depends(get_db)):
     """Create a new ticket at kiosk"""
     id_hash = hash_id_number(body.id_number)
 
     # Check for existing active ticket
-    existing_ticket = db.query(Ticket).filter(
-        Ticket.id_number_hash == id_hash,
-        Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING])
-    ).first()
+    existing_ticket = (
+        db.query(Ticket)
+        .filter(
+            Ticket.id_number_hash == id_hash,
+            Ticket.status.in_([TicketStatus.WAITING, TicketStatus.CALLED, TicketStatus.SERVING]),
+        )
+        .first()
+    )
 
     if existing_ticket:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"You already have an active ticket: {existing_ticket.ticket_number}."
+            detail=f"You already have an active ticket: {existing_ticket.ticket_number}.",
         )
 
     # Get or create citizen record
     citizen = db.query(Citizen).filter(Citizen.id_number_hash == id_hash).first()
     if not citizen:
         citizen = Citizen(
-            id_number_hash=id_hash,
-            full_name=body.full_name,
-            phone_number=body.phone_number
+            id_number_hash=id_hash, full_name=body.full_name, phone_number=body.phone_number
         )
         db.add(citizen)
         db.commit()
@@ -243,7 +263,7 @@ async def create_ticket(
     if citizen.is_blacklisted:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Access denied. Reason: {citizen.blacklist_reason}"
+            detail=f"Access denied. Reason: {citizen.blacklist_reason}",
         )
 
     if detect_suspicious_activity(citizen.id, db):
@@ -251,13 +271,13 @@ async def create_ticket(
             action="SUSPICIOUS_TICKET_REQUEST",
             citizen_id=citizen.id,
             details=f"Multiple ticket requests detected for {body.full_name}",
-            is_suspicious=True
+            is_suspicious=True,
         )
         db.add(audit)
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many ticket requests. Please contact administration."
+            detail="Too many ticket requests. Please contact administration.",
         )
 
     # Generate ticket number
@@ -266,10 +286,12 @@ async def create_ticket(
     ticket_number = generate_ticket_number(body.service_type.value, sequence)
 
     # Calculate queue position
-    queue_position = db.query(Ticket).filter(
-        Ticket.service_type == body.service_type,
-        Ticket.status == TicketStatus.WAITING
-    ).count() + 1
+    queue_position = (
+        db.query(Ticket)
+        .filter(Ticket.service_type == body.service_type, Ticket.status == TicketStatus.WAITING)
+        .count()
+        + 1
+    )
 
     # Create ticket
     new_ticket = Ticket(
@@ -279,7 +301,7 @@ async def create_ticket(
         full_name=body.full_name,
         service_type=body.service_type,
         status=TicketStatus.WAITING,
-        expires_at=calculate_expiry_time()
+        expires_at=calculate_expiry_time(),
     )
 
     # QR Code data
@@ -287,7 +309,7 @@ async def create_ticket(
         "ticket_number": ticket_number,
         "full_name": body.full_name,
         "service_type": body.service_type.value,
-        "created_at": str(datetime.utcnow())
+        "created_at": str(datetime.utcnow()),
     }
     new_ticket.qr_code = generate_qr_code(ticket_data)
 
@@ -300,21 +322,19 @@ async def create_ticket(
         action="TICKET_CREATED",
         citizen_id=citizen.id,
         ticket_id=new_ticket.id,
-        details=f"Ticket {ticket_number} created for {body.service_type.value}"
+        details=f"Ticket {ticket_number} created for {body.service_type.value}",
     )
     db.add(audit)
     db.commit()
 
     # Telegram Notification
-    if (telegram_integration and 
-        citizen.telegram_chat_id and 
-        citizen.telegram_notifications_enabled):
+    if telegram_integration and citizen.telegram_chat_id and citizen.telegram_notifications_enabled:
         try:
             telegram_integration.register_ticket_sync(
                 chat_id=citizen.telegram_chat_id,
                 ticket_number=ticket_number,
                 queue_name=request.service_type.value,
-                estimated_wait_time=f"{estimate_wait_time(queue_position)} minutes"
+                estimated_wait_time=f"{estimate_wait_time(queue_position)} minutes",
             )
             new_ticket.telegram_notification_sent = True
             db.commit()
@@ -331,8 +351,9 @@ async def create_ticket(
         expires_at=new_ticket.expires_at,
         estimated_wait_minutes=estimate_wait_time(queue_position),
         queue_position=queue_position,
-        qr_code=new_ticket.qr_code
+        qr_code=new_ticket.qr_code,
     )
+
 
 @app.get("/api/tickets/{ticket_number}", response_model=TicketResponse)
 async def get_ticket_status(ticket_number: str, db: Session = Depends(get_db)):
@@ -347,11 +368,16 @@ async def get_ticket_status(ticket_number: str, db: Session = Depends(get_db)):
 
     queue_position = None
     if ticket.status == TicketStatus.WAITING:
-        queue_position = db.query(Ticket).filter(
-            Ticket.service_type == ticket.service_type,
-            Ticket.status == TicketStatus.WAITING,
-            Ticket.id < ticket.id
-        ).count() + 1
+        queue_position = (
+            db.query(Ticket)
+            .filter(
+                Ticket.service_type == ticket.service_type,
+                Ticket.status == TicketStatus.WAITING,
+                Ticket.id < ticket.id,
+            )
+            .count()
+            + 1
+        )
 
     return TicketResponse(
         id=ticket.id,
@@ -364,10 +390,12 @@ async def get_ticket_status(ticket_number: str, db: Session = Depends(get_db)):
         expires_at=ticket.expires_at,
         estimated_wait_minutes=estimate_wait_time(queue_position) if queue_position else None,
         queue_position=queue_position,
-        qr_code=ticket.qr_code
+        qr_code=ticket.qr_code,
     )
 
+
 # ==================== COUNTER ENDPOINTS ====================
+
 
 @app.post("/api/counters", response_model=CounterResponse)
 async def create_counter(
@@ -385,12 +413,13 @@ async def create_counter(
         counter_number=request.counter_number,
         counter_name=request.counter_name,
         service_types=service_types_str,
-        staff_name=request.staff_name
+        staff_name=request.staff_name,
     )
     db.add(counter)
     db.commit()
     db.refresh(counter)
     return counter
+
 
 @app.get("/api/counters", response_model=List[CounterResponse])
 async def get_counters(
@@ -399,6 +428,7 @@ async def get_counters(
 ):
     """Get all counters"""
     return db.query(Counter).all()
+
 
 @app.post("/api/counters/{counter_id}/call-next")
 async def call_next_ticket(
@@ -413,13 +443,18 @@ async def call_next_ticket(
 
     # Robust parsing of service types (strip whitespace and skip empty)
     service_types_list = [st.strip() for st in counter.service_types.split(",") if st.strip()]
-    
+
     # Get next ticket
-    next_ticket = db.query(Ticket).filter(
-        Ticket.service_type.in_([ServiceType(st) for st in service_types_list]),
-        Ticket.status == TicketStatus.WAITING,
-        Ticket.expires_at > datetime.utcnow()
-    ).order_by(Ticket.created_at).first()
+    next_ticket = (
+        db.query(Ticket)
+        .filter(
+            Ticket.service_type.in_([ServiceType(st) for st in service_types_list]),
+            Ticket.status == TicketStatus.WAITING,
+            Ticket.expires_at > datetime.utcnow(),
+        )
+        .order_by(Ticket.created_at)
+        .first()
+    )
 
     if not next_ticket:
         return {"message": "No tickets waiting", "counter_number": counter.counter_number}
@@ -430,35 +465,42 @@ async def call_next_ticket(
     counter.current_ticket_id = next_ticket.id
     db.commit()
 
-    db.add(AuditLog(
-        action="TICKET_CALLED",
-        ticket_id=next_ticket.id,
-        counter_id=counter.id,
-        details=f"Ticket {next_ticket.ticket_number} called to counter {counter.counter_number}"
-    ))
+    db.add(
+        AuditLog(
+            action="TICKET_CALLED",
+            ticket_id=next_ticket.id,
+            counter_id=counter.id,
+            details=f"Ticket {next_ticket.ticket_number} called to counter {counter.counter_number}",
+        )
+    )
     db.commit()
 
     return {
         "message": "Ticket called",
         "ticket_number": next_ticket.ticket_number,
         "counter_number": counter.counter_number,
-        "full_name": next_ticket.full_name
+        "full_name": next_ticket.full_name,
     }
 
+
 @app.post("/api/counters/{counter_id}/verify")
-async def verify_ticket_at_counter(counter_id: int, request: TicketVerifyRequest, db: Session = Depends(get_db)):
+async def verify_ticket_at_counter(
+    counter_id: int, request: TicketVerifyRequest, db: Session = Depends(get_db)
+):
     """Verify citizen ID matches ticket at counter"""
     ticket = db.query(Ticket).filter(Ticket.ticket_number == request.ticket_number).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     if ticket.id_number_hash != hash_id_number(request.id_number):
-        db.add(AuditLog(
-            action="VERIFICATION_FAILED",
-            ticket_id=ticket.id,
-            details=f"ID mismatch for ticket {ticket.ticket_number}",
-            is_suspicious=True
-        ))
+        db.add(
+            AuditLog(
+                action="VERIFICATION_FAILED",
+                ticket_id=ticket.id,
+                details=f"ID mismatch for ticket {ticket.ticket_number}",
+                is_suspicious=True,
+            )
+        )
         db.commit()
         raise HTTPException(status_code=403, detail="ID mismatch")
 
@@ -466,14 +508,17 @@ async def verify_ticket_at_counter(counter_id: int, request: TicketVerifyRequest
     ticket.served_at = datetime.utcnow()
     db.commit()
 
-    db.add(AuditLog(
-        action="VERIFICATION_SUCCESS",
-        ticket_id=ticket.id,
-        details=f"Ticket {ticket.ticket_number} verified"
-    ))
+    db.add(
+        AuditLog(
+            action="VERIFICATION_SUCCESS",
+            ticket_id=ticket.id,
+            details=f"Ticket {ticket.ticket_number} verified",
+        )
+    )
     db.commit()
 
     return {"message": "Verification successful", "status": ticket.status}
+
 
 @app.post("/api/counters/{counter_id}/complete")
 async def complete_service(counter_id: int, ticket_number: str, db: Session = Depends(get_db)):
@@ -484,7 +529,7 @@ async def complete_service(counter_id: int, ticket_number: str, db: Session = De
 
     ticket.status = TicketStatus.COMPLETED
     ticket.completed_at = datetime.utcnow()
-    
+
     counter = db.query(Counter).filter(Counter.id == counter_id).first()
     if counter:
         counter.current_ticket_id = None
@@ -492,49 +537,64 @@ async def complete_service(counter_id: int, ticket_number: str, db: Session = De
 
     return {"message": "Service completed", "ticket_number": ticket.ticket_number}
 
+
 # ==================== DISPLAY & STATS ====================
+
 
 @app.get("/api/display/queue-status", response_model=QueueStatusResponse)
 async def get_queue_status(db: Session = Depends(get_db)):
     """Get current queue status for display screen"""
-    serving = db.query(Ticket).filter(Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING])).all()
-    now_serving = [{"ticket_number": t.ticket_number, "counter_number": t.counter_number} for t in serving]
+    serving = (
+        db.query(Ticket)
+        .filter(Ticket.status.in_([TicketStatus.CALLED, TicketStatus.SERVING]))
+        .all()
+    )
+    now_serving = [
+        {"ticket_number": t.ticket_number, "counter_number": t.counter_number} for t in serving
+    ]
     waiting_count = db.query(Ticket).filter(Ticket.status == TicketStatus.WAITING).count()
-    
+
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    total_served = db.query(Ticket).filter(Ticket.status == TicketStatus.COMPLETED, Ticket.completed_at >= today_start).count()
-    
+    total_served = (
+        db.query(Ticket)
+        .filter(Ticket.status == TicketStatus.COMPLETED, Ticket.completed_at >= today_start)
+        .count()
+    )
+
     return QueueStatusResponse(
         now_serving=now_serving,
         waiting_count=waiting_count,
         total_served_today=total_served,
-        average_wait_minutes=15 # This can be calculated if needed
+        average_wait_minutes=15,  # This can be calculated if needed
     )
+
 
 @app.get("/api/display/waiting-tickets")
 async def get_waiting_tickets(db: Session = Depends(get_db)):
     """Get all waiting tickets with details for dashboard display"""
-    waiting_tickets = db.query(Ticket).filter(
-        Ticket.status == TicketStatus.WAITING,
-        Ticket.expires_at > datetime.utcnow()
-    ).order_by(Ticket.created_at).all()
+    waiting_tickets = (
+        db.query(Ticket)
+        .filter(Ticket.status == TicketStatus.WAITING, Ticket.expires_at > datetime.utcnow())
+        .order_by(Ticket.created_at)
+        .all()
+    )
 
     tickets = []
     for idx, ticket in enumerate(waiting_tickets, 1):
-        tickets.append({
-            "ticket_number": ticket.ticket_number,
-            "full_name": ticket.full_name,
-            "service_type": ticket.service_type.value,
-            "status": ticket.status.value,
-            "created_at": ticket.created_at.isoformat(),
-            "position": idx,
-            "id_number_display": ticket.id_number_hash[:8] + "***" 
-        })
+        tickets.append(
+            {
+                "ticket_number": ticket.ticket_number,
+                "full_name": ticket.full_name,
+                "service_type": ticket.service_type.value,
+                "status": ticket.status.value,
+                "created_at": ticket.created_at.isoformat(),
+                "position": idx,
+                "id_number_display": ticket.id_number_hash[:8] + "***",
+            }
+        )
 
-    return {
-        "total_waiting": len(tickets),
-        "tickets": tickets
-    }
+    return {"total_waiting": len(tickets), "tickets": tickets}
+
 
 @app.get("/api/statistics", response_model=StatisticsResponse)
 async def get_statistics(
@@ -544,22 +604,25 @@ async def get_statistics(
     """Get system statistics"""
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
     total_tickets = db.query(Ticket).filter(Ticket.created_at >= today_start).count()
-    total_served = db.query(Ticket).filter(Ticket.status == TicketStatus.COMPLETED, Ticket.completed_at >= today_start).count()
-    
+    total_served = (
+        db.query(Ticket)
+        .filter(Ticket.status == TicketStatus.COMPLETED, Ticket.completed_at >= today_start)
+        .count()
+    )
+
     return StatisticsResponse(
         total_tickets_today=total_tickets,
         total_served_today=total_served,
         total_waiting=db.query(Ticket).filter(Ticket.status == TicketStatus.WAITING).count(),
         total_expired=db.query(Ticket).filter(Ticket.status == TicketStatus.EXPIRED).count(),
         active_counters=db.query(Counter).filter(Counter.is_active == True).count(),
-        average_service_time_minutes=10.5
+        average_service_time_minutes=10.5,
     )
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", settings.port)),
-        reload=False
+        "main:app", host="0.0.0.0", port=int(os.environ.get("PORT", settings.port)), reload=False
     )

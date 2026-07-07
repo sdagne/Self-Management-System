@@ -26,10 +26,8 @@ def main():
 
     with engine.connect() as conn:
         result = conn.execute(
-            text(
-                "UPDATE tickets SET status='cancelled', completed_at=:now WHERE status='waiting'"
-            ),
-            {"now": now}
+            text("UPDATE tickets SET status='cancelled', completed_at=:now WHERE status='waiting'"),
+            {"now": now},
         )
         conn.commit()
         updated = result.rowcount

@@ -11,6 +11,7 @@ Exports to:
   - Jaeger (via OTLP gRPC) in production
   - Console (stdout) when OTEL_EXPORTER=console
 """
+
 import logging
 import os
 from typing import Optional
@@ -49,11 +50,13 @@ def setup_tracing(app=None, service_name: str = "queue-management-api") -> Optio
         sample_rate = float(os.getenv("OTEL_SAMPLE_RATE", "1.0"))
         exporter_type = os.getenv("OTEL_EXPORTER", "otlp")
 
-        resource = Resource.create({
-            SERVICE_NAME: service,
-            SERVICE_VERSION: version,
-            "deployment.environment": environment,
-        })
+        resource = Resource.create(
+            {
+                SERVICE_NAME: service,
+                SERVICE_VERSION: version,
+                "deployment.environment": environment,
+            }
+        )
 
         sampler = ParentBased(root=TraceIdRatioBased(sample_rate))
         provider = TracerProvider(resource=resource, sampler=sampler)
@@ -64,6 +67,7 @@ def setup_tracing(app=None, service_name: str = "queue-management-api") -> Optio
             logger.info("OpenTelemetry: using Console exporter")
         else:
             from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
             endpoint = os.getenv("OTEL_ENDPOINT", "http://jaeger-collector:4317")
             exporter = OTLPSpanExporter(endpoint=endpoint, insecure=True)
             logger.info(f"OpenTelemetry: using OTLP exporter → {endpoint}")
@@ -103,6 +107,7 @@ def _instrument_fastapi(app):
         return
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
         FastAPIInstrumentor.instrument_app(
             app,
             excluded_urls="health,metrics",  # Don't trace health/metrics endpoints
@@ -126,6 +131,7 @@ def _instrument_sqlalchemy():
     """Instrument SQLAlchemy to create spans for DB queries."""
     try:
         from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+
         SQLAlchemyInstrumentor().instrument()
         logger.debug("OpenTelemetry: SQLAlchemy instrumented")
     except ImportError:
@@ -136,6 +142,7 @@ def _instrument_redis():
     """Instrument Redis client to trace cache operations."""
     try:
         from opentelemetry.instrumentation.redis import RedisInstrumentor
+
         RedisInstrumentor().instrument()
         logger.debug("OpenTelemetry: Redis instrumented")
     except ImportError:
@@ -146,6 +153,7 @@ def _instrument_celery():
     """Instrument Celery to propagate trace context through async tasks."""
     try:
         from opentelemetry.instrumentation.celery import CeleryInstrumentor
+
         CeleryInstrumentor().instrument()
         logger.debug("OpenTelemetry: Celery instrumented")
     except ImportError:
@@ -166,16 +174,26 @@ def get_tracer(name: str = "queue-management"):
     """
     try:
         from opentelemetry import trace
+
         return trace.get_tracer(name)
     except ImportError:
         # Return a no-op tracer if OTel is not installed
         class _NoopTracer:
             class _NoopSpan:
-                def set_attribute(self, *a, **kw): pass
-                def set_status(self, *a, **kw): pass
-                def record_exception(self, *a, **kw): pass
-                def __enter__(self): return self
-                def __exit__(self, *a): pass
+                def set_attribute(self, *a, **kw):
+                    pass
+
+                def set_status(self, *a, **kw):
+                    pass
+
+                def record_exception(self, *a, **kw):
+                    pass
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a):
+                    pass
 
             def start_as_current_span(self, name, **kw):
                 return self._NoopSpan()

@@ -2,9 +2,11 @@
 Create Multiple Counters for Testing
 This will create Counter 2 and Counter 3 so you can see multiple counters on the display
 """
+
 import requests
 
 API_BASE = "http://localhost:8001"
+
 
 def create_counter(counter_number, name, service_types, staff_name):
     """Create a new counter"""
@@ -12,12 +14,12 @@ def create_counter(counter_number, name, service_types, staff_name):
         "counter_number": counter_number,
         "counter_name": name,
         "service_types": service_types,
-        "staff_name": staff_name
+        "staff_name": staff_name,
     }
-    
+
     try:
         response = requests.post(f"{API_BASE}/api/counters", json=data)
-        
+
         if response.status_code == 200:
             result = response.json()
             print(f"✅ Created: Counter {counter_number} - {name} (Staff: {staff_name})")
@@ -32,10 +34,10 @@ def create_counter(counter_number, name, service_types, staff_name):
 
 
 def main():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("CREATING MULTIPLE COUNTERS FOR TESTING")
-    print("="*60 + "\n")
-    
+    print("=" * 60 + "\n")
+
     # Check server
     try:
         response = requests.get(f"{API_BASE}/health", timeout=3)
@@ -46,46 +48,46 @@ def main():
         print("❌ Server is not running!")
         print("   Start it with: python run_server.py\n")
         return
-    
+
     print("✅ Server is online\n")
     print("Creating counters...\n")
-    
+
     # Counter 1 already exists, so we'll create Counter 2 and 3
     counters = [
         {
             "counter_number": 2,
             "name": "Passport Services Counter",
             "service_types": ["passport_renewal", "immigration"],
-            "staff_name": "Dawit Haile"
+            "staff_name": "Dawit Haile",
         },
         {
             "counter_number": 3,
             "name": "Document Services Counter",
             "service_types": ["birth_certificate", "document_legalization"],
-            "staff_name": "Sara Tesfaye"
+            "staff_name": "Sara Tesfaye",
         },
         {
             "counter_number": 4,
             "name": "General Services Counter",
             "service_types": ["tax_service", "business_license", "other"],
-            "staff_name": "Yonas Bekele"
-        }
+            "staff_name": "Yonas Bekele",
+        },
     ]
-    
+
     success_count = 0
     for counter in counters:
         if create_counter(
             counter["counter_number"],
             counter["name"],
             counter["service_types"],
-            counter["staff_name"]
+            counter["staff_name"],
         ):
             success_count += 1
-    
-    print("\n" + "="*60)
+
+    print("\n" + "=" * 60)
     print(f"RESULT: Created {success_count} new counter(s)")
-    print("="*60 + "\n")
-    
+    print("=" * 60 + "\n")
+
     if success_count > 0:
         print("✅ You now have multiple counters!")
         print("\nTo test:")
@@ -106,4 +108,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

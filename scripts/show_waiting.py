@@ -42,4 +42,3 @@ def display_tickets(data):
 if __name__ == "__main__":
     payload = fetch_waiting_tickets()
     display_tickets(payload)
-

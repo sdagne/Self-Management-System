@@ -1,4 +1,5 @@
 """Celery configuration for async task processing."""
+
 import os
 from celery import Celery
 from kombu import Exchange, Queue
@@ -22,7 +23,6 @@ celery_app.conf.update(
     task_soft_time_limit=240,  # 4 minutes soft limit
     worker_prefetch_multiplier=4,
     worker_max_tasks_per_child=1000,
-    
     # Task routes
     task_routes={
         "app.services.tasks.send_telegram_notification": {"queue": "notifications"},
@@ -30,7 +30,6 @@ celery_app.conf.update(
         "app.services.tasks.cleanup_expired_tickets": {"queue": "maintenance"},
         "app.services.tasks.generate_daily_report": {"queue": "reports"},
     },
-    
     # Queue definitions
     task_queues=(
         Queue("default", Exchange("default"), routing_key="default"),
@@ -38,7 +37,6 @@ celery_app.conf.update(
         Queue("maintenance", Exchange("maintenance"), routing_key="maintenance"),
         Queue("reports", Exchange("reports"), routing_key="reports"),
     ),
-    
     # Beat schedule for periodic tasks
     beat_schedule={
         "cleanup-expired-tickets-every-hour": {

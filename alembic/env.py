@@ -3,6 +3,7 @@ Alembic migration environment.
 Reads DATABASE_URL from application settings so migrations
 always use the same database as the running application.
 """
+
 import os
 import sys
 from logging.config import fileConfig

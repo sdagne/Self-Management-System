@@ -1,4 +1,5 @@
 """Tests for ticket lifecycle: create, retrieve, duplicate prevention."""
+
 import uuid
 
 import pytest

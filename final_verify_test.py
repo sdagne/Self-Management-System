@@ -3,14 +3,15 @@ import sys
 
 API_BASE = "http://localhost:8001"
 
+
 def test_flow():
     print(f"--- Starting Final Verification Test ---")
-    
+
     # 1. Create ticket
     payload = {
         "id_number": "V-FINAL-TEST-1",
         "full_name": "Verification User",
-        "service_type": "kebele_id"
+        "service_type": "kebele_id",
     }
     resp = requests.post(f"{API_BASE}/api/tickets", json=payload)
     if resp.status_code != 201:
@@ -49,6 +50,7 @@ def test_flow():
         print(f"Ticket {ticket_num} NOT in NOW SERVING display API!")
 
     print(f"--- Verification Successful ---")
+
 
 if __name__ == "__main__":
     test_flow()

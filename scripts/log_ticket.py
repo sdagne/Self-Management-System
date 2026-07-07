@@ -24,7 +24,7 @@ def create_ticket(id_number: str | None = None):
         "id_number": id_number or f"EP{uuid.uuid4().hex[:6]}",
         "full_name": "Test User",
         "service_type": "land_registration",
-        "phone_number": "+251911234567"
+        "phone_number": "+251911234567",
     }
     try:
         response = requests.post(f"{API_BASE}/tickets", json=payload)
@@ -37,7 +37,7 @@ def create_ticket(id_number: str | None = None):
     record = {
         "ticket_number": ticket["ticket_number"],
         "id_number": payload["id_number"],
-        "created_at": ticket.get("created_at")
+        "created_at": ticket.get("created_at"),
     }
     append_record(record)
     print("Ticket created:", record)
@@ -54,4 +54,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
