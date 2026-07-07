@@ -18,7 +18,7 @@ try:
     if response.status_code != 200:
         print("❌ Server is not running properly")
         exit(1)
-except:
+except Exception:
     print("❌ Server is not running!")
     print("   Start it with: python run_server.py\n")
     exit(1)

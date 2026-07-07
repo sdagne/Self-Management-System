@@ -24,7 +24,7 @@ def clean_all_tickets():
         if response.status_code != 200:
             print("❌ Server is not responding properly")
             return False
-    except:
+    except Exception:
         print("❌ Server is not running!")
         print("   Start it with: python run_server.py\n")
         return False
@@ -57,7 +57,7 @@ def clean_all_tickets():
             print(f"❌ {id_number}: Error - {e}")
 
     print("\n" + "=" * 60)
-    print(f"🎉 CLEANUP COMPLETE!")
+    print("🎉 CLEANUP COMPLETE!")
     print("=" * 60)
     print(f"   Cancelled: {cancelled_count} ticket(s)")
     print(f"   No tickets: {not_found_count} ID(s)")

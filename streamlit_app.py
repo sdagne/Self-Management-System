@@ -1,7 +1,6 @@
 import streamlit as st
 import subprocess
 import time
-import os
 import requests
 import socket
 import sys
@@ -73,7 +72,7 @@ def start_backend_local():
                                     )
                                     st.rerun()
                                     return
-                            except:
+                            except Exception:
                                 pass
                             time.sleep(1)
                     st.error("❌ Startup Timeout. please run it manually.")
@@ -94,7 +93,7 @@ def start_backend_local():
                 st.sidebar.success("🔗 Connected to Cloud API")
             else:
                 st.sidebar.error("❌ Cloud API responded with error")
-        except:
+        except Exception:
             st.sidebar.warning("⚠️ Cloud API Unreachable")
 
 
@@ -127,7 +126,7 @@ for i, tab_name in enumerate(["🎫 Kiosk", "💼 Counter", "🖥️ Public Disp
                         },
                     )
                     st.toast("Ticket created!")
-                except:
+                except Exception:
                     st.error("Link offline")
 
         # Build URL
@@ -140,7 +139,7 @@ for i, tab_name in enumerate(["🎫 Kiosk", "💼 Counter", "🖥️ Public Disp
         # Rendering
         try:
             st.components.v1.iframe(iframe_src, height=900, scrolling=True)
-        except Exception as e:
+        except Exception:
             st.info("Iframe loading... ensure the backend is running.")
 
 st.markdown("---")

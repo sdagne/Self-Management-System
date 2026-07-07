@@ -21,7 +21,6 @@ def create_counter(counter_number, name, service_types, staff_name):
         response = requests.post(f"{API_BASE}/api/counters", json=data)
 
         if response.status_code == 200:
-            result = response.json()
             print(f"✅ Created: Counter {counter_number} - {name} (Staff: {staff_name})")
             return True
         else:
@@ -44,7 +43,7 @@ def main():
         if response.status_code != 200:
             print("❌ Server is not responding properly")
             return
-    except:
+    except Exception:
         print("❌ Server is not running!")
         print("   Start it with: python run_server.py\n")
         return

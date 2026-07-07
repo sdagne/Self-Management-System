@@ -2,7 +2,10 @@
 Database configuration and models
 """
 
+import enum
 import logging
+from datetime import datetime
+
 from sqlalchemy import (
     create_engine,
     event,
@@ -16,10 +19,8 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
-from datetime import datetime
-import enum
+
 from config import settings
-from sqlalchemy import Column, String, Boolean
 
 logger = logging.getLogger(__name__)
 

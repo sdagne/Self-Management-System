@@ -8,11 +8,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from datetime import datetime
+from datetime import datetime  # noqa: E402
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text  # noqa: E402
 
-from config import settings
+from config import settings  # noqa: E402
 
 
 def get_engine():

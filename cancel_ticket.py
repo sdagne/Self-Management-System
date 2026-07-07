@@ -71,7 +71,7 @@ def get_active_tickets(id_number):
                     print(f"     Expires: {ticket['expires_at']}")
             return result["tickets"]
         else:
-            print(f"❌ Error checking tickets")
+            print("❌ Error checking tickets")
             return []
     except Exception as e:
         print(f"❌ Network error: {e}")
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             print("✅ Server is online\n")
         else:
             print("⚠️  Server responded but may have issues\n")
-    except:
+    except Exception:
         print("❌ Server is not running!")
         print("   Start it with: python run_server.py\n")
         sys.exit(1)

@@ -6,23 +6,26 @@ Ethiopia - Queue Management Standard
 import logging
 import os
 from datetime import datetime
+from typing import List
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request as StarletteRequest
 
 from database import get_db, init_db, Ticket, Citizen, Counter, AuditLog, TicketStatus, ServiceType
 from models import (
     TicketCreateRequest,
     TicketResponse,
     TicketVerifyRequest,
-    TicketAssignRequest,
     CounterCreateRequest,
     CounterResponse,
     StatisticsResponse,
@@ -38,7 +41,7 @@ from utils import (
     detect_suspicious_activity,
 )
 from config import settings
-from auth import require_role, exchange_static_token_for_jwt, create_access_token
+from auth import require_role, exchange_static_token_for_jwt
 from security_headers import SecurityHeadersMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 from telegram_routes import router as telegram_router
@@ -83,8 +86,6 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(SecurityHeadersMiddleware, is_production=settings.is_production)
 
 # ─── No-Cache for HTML files (ensures portal updates are always reflected) ───────────
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request as StarletteRequest
 
 
 class NoCacheHTMLMiddleware(BaseHTTPMiddleware):
@@ -190,8 +191,6 @@ async def server_status():
 
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────────────
-
-from pydantic import BaseModel
 
 
 class TokenRequest(BaseModel):
@@ -615,7 +614,7 @@ async def get_statistics(
         total_served_today=total_served,
         total_waiting=db.query(Ticket).filter(Ticket.status == TicketStatus.WAITING).count(),
         total_expired=db.query(Ticket).filter(Ticket.status == TicketStatus.EXPIRED).count(),
-        active_counters=db.query(Counter).filter(Counter.is_active == True).count(),
+        active_counters=db.query(Counter).filter(Counter.is_active).count(),
         average_service_time_minutes=10.5,
     )
 

@@ -1,7 +1,9 @@
 """Redis configuration and client for Queue Management System."""
 
 import os
+from datetime import datetime
 from typing import Optional
+
 import redis
 from redis import Redis, ConnectionPool
 import logging

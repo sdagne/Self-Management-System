@@ -9,7 +9,6 @@ CI (headless): locust -f tests/load/locustfile.py --host=$HOST \
 import random
 import string
 from locust import HttpUser, TaskSet, task, between, events
-from locust.runners import MasterRunner
 
 # ─── Helpers ────────────────────────────────────────────────────────────────────────
 
@@ -257,7 +256,7 @@ def assert_thresholds(environment, **kwargs):
     failure_rate = stats.num_failures / stats.num_requests * 100
     p95 = stats.get_response_time_percentile(0.95) or 0
 
-    print(f"\n📊 Load Test Summary:")
+    print("\n📊 Load Test Summary:")
     print(f"   Total Requests : {stats.num_requests}")
     print(f"   Failures       : {stats.num_failures} ({failure_rate:.2f}%)")
     print(f"   Avg RPS        : {stats.current_rps:.1f}")

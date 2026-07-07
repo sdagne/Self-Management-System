@@ -1,14 +1,13 @@
 # queue_telegram_integration.py
 import logging
-from datetime import datetime
 from typing import Optional, Dict
+
 from telegram_service import (
     TelegramService,
     send_registration_ticket_sync,
     send_appointment_reminder_sync,
 )
 from reminder_scheduler import ReminderScheduler
-import asyncio
 
 logger = logging.getLogger(__name__)
 

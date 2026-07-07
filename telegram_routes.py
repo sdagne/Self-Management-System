@@ -1,14 +1,14 @@
 # telegram_routes.py
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from database import get_db, Citizen, Ticket
-from models import TicketCreateRequest, TicketResponse
-from telegram_models import TelegramUserRegister, TelegramNotificationResponse
+
+from database import get_db, Citizen
+from telegram_models import TelegramUserRegister
 from queue_telegram_integration import QueueTelegramIntegration
 from config import settings
-from utils import hash_id_number, generate_ticket_number, calculate_expiry_time, estimate_wait_time
-from datetime import datetime
-import logging
+from utils import hash_id_number
 
 logger = logging.getLogger(__name__)
 

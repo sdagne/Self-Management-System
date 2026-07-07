@@ -57,7 +57,7 @@ def send_telegram_notification(
         from telegram_service import TelegramService
 
         telegram_service = TelegramService()
-        result = telegram_service.send_message(chat_id, message)
+        telegram_service.send_message(chat_id, message)
 
         logger.info(
             f"✅ Telegram notification sent to {chat_id}"
@@ -238,9 +238,7 @@ def generate_daily_report(self) -> Dict[str, Any]:
             or 0
         )
 
-        active_counters = (
-            self.db.query(func.count(Counter.id)).filter(Counter.is_active == True).scalar()
-        )
+        active_counters = self.db.query(func.count(Counter.id)).filter(Counter.is_active).scalar()
 
         report = {
             "date": today_start.isoformat(),

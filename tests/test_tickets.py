@@ -2,8 +2,6 @@
 
 import uuid
 
-import pytest
-
 
 def unique_payload(service_type="immigration"):
     """Generate a payload with a unique ID to avoid duplicate-ticket errors."""

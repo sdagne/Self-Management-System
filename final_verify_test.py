@@ -1,11 +1,10 @@
 import requests
-import sys
 
 API_BASE = "http://localhost:8001"
 
 
 def test_flow():
-    print(f"--- Starting Final Verification Test ---")
+    print("--- Starting Final Verification Test ---")
 
     # 1. Create ticket
     payload = {
@@ -49,7 +48,7 @@ def test_flow():
     else:
         print(f"Ticket {ticket_num} NOT in NOW SERVING display API!")
 
-    print(f"--- Verification Successful ---")
+    print("--- Verification Successful ---")
 
 
 if __name__ == "__main__":

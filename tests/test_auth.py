@@ -1,7 +1,5 @@
 """Tests for authentication: JWT token exchange and protected routes."""
 
-import pytest
-
 
 class TestTokenExchange:
     def test_exchange_valid_admin_token(self, client):

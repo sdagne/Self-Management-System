@@ -2,9 +2,8 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, Callable
+
 from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-import pytz
 
 logger = logging.getLogger(__name__)
 

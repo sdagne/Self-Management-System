@@ -1,7 +1,7 @@
 # telegram_service.py
 import logging
-from datetime import datetime, timedelta
 from typing import Optional
+
 from telegram import Bot
 from telegram.error import TelegramError
 import asyncio

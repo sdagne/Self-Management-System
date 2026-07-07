@@ -1,7 +1,5 @@
 """Tests for health and root endpoints."""
 
-import pytest
-
 
 class TestRootEndpoint:
     def test_root_returns_200(self, client):
@@ -9,7 +7,7 @@ class TestRootEndpoint:
         assert response.status_code == 200
 
     def test_root_contains_version(self, client):
-        data = response = client.get("/")
+        response = client.get("/")
         assert "version" in response.json()
 
     def test_root_contains_status(self, client):

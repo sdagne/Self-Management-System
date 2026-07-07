@@ -69,21 +69,21 @@ print("=" * 60 + "\n")
 
 # Check for tickets with counter_number = 1
 cursor.execute("""
-    SELECT COUNT(*) FROM tickets 
+    SELECT COUNT(*) FROM tickets
     WHERE status IN ('called', 'serving') AND counter_number = 1
 """)
 count_counter_1 = cursor.fetchone()[0]
 
 # Check for tickets with other counter numbers
 cursor.execute("""
-    SELECT COUNT(*) FROM tickets 
+    SELECT COUNT(*) FROM tickets
     WHERE status IN ('called', 'serving') AND counter_number != 1 AND counter_number IS NOT NULL
 """)
 count_other_counters = cursor.fetchone()[0]
 
 # Check for tickets with no counter number
 cursor.execute("""
-    SELECT COUNT(*) FROM tickets 
+    SELECT COUNT(*) FROM tickets
     WHERE status IN ('called', 'serving') AND counter_number IS NULL
 """)
 count_no_counter = cursor.fetchone()[0]

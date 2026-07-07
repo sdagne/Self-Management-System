@@ -7,7 +7,6 @@ import hashlib
 import hmac
 from datetime import datetime, timedelta
 from io import BytesIO
-from typing import Optional
 
 import qrcode
 

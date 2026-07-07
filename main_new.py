@@ -1,6 +1,8 @@
 # Example usage in your main.py or registration handler
-from queue_telegram_integration import QueueTelegramIntegration
 import os
+
+from queue_telegram_integration import QueueTelegramIntegration
+from utils import generate_ticket_number
 
 # Initialize the integration (do this once at app startup)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")  # Store token in environment variable
@@ -66,7 +68,7 @@ def cancel_appointment(ticket_number, chat_id):
     if success:
         print(f"✅ Appointment reminder cancelled for ticket {ticket_number}")
     else:
-        print(f"❌ Failed to cancel reminder")
+        print("❌ Failed to cancel reminder")
 
 
 # Example 5: View all scheduled reminders

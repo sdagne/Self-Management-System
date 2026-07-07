@@ -1,7 +1,5 @@
 """Tests for counter management endpoints."""
 
-import pytest
-
 
 def counter_payload(number: int):
     return {

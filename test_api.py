@@ -24,7 +24,7 @@ def cleanup_old_tickets():
                 result = response.json()
                 if result.get("cancelled_tickets"):
                     cleaned += len(result["cancelled_tickets"])
-        except:
+        except Exception:
             pass  # Ignore errors during cleanup
 
     if cleaned > 0:
@@ -56,7 +56,7 @@ def test_create_ticket():
     print(f"Status: {response.status_code}")
     if response.status_code == 201:
         ticket = response.json()
-        print(f"[OK] Ticket Created!")
+        print("[OK] Ticket Created!")
         print(f"   Ticket Number: {ticket['ticket_number']}")
         print(f"   Name: {ticket['full_name']}")
         print(f"   Service: {ticket['service_type']}")
@@ -93,7 +93,7 @@ def test_create_counter():
     print(f"Status: {response.status_code}")
     if response.status_code == 200:
         counter = response.json()
-        print(f"[OK] Counter Created!")
+        print("[OK] Counter Created!")
         print(f"   Counter Number: {counter['counter_number']}")
         print(f"   Counter Name: {counter['counter_name']}")
         print(f"   Staff: {counter['staff_name']}")
@@ -121,7 +121,7 @@ def test_call_next_ticket(counter_id):
 
 def test_verify_ticket(counter_id, ticket_number, id_number):
     """Test ticket verification"""
-    print(f"\n[VERIFY] Verifying Ticket at Counter...")
+    print("\n[VERIFY] Verifying Ticket at Counter...")
     data = {"ticket_number": ticket_number, "id_number": id_number}
     response = requests.post(f"{BASE_URL}/api/counters/{counter_id}/verify", json=data)
     print(f"Status: {response.status_code}")
