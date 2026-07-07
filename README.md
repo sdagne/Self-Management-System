@@ -1,4 +1,4 @@
-# SAN Queue Management System
+# Self Management System
 
 A secure, personalized ticketing and queue management system designed specifically for Ethiopia, preventing ticket reselling and improving public service efficiency.
 
@@ -6,7 +6,7 @@ A secure, personalized ticketing and queue management system designed specifical
 
 - **Identity-Based Ticketing**: One ticket per person, tied to their ID
 - **Anti-Fraud Protection**: Prevents ticket reselling and broker activities
-- **Real-time Queue Management**: Live display of current queue status
+- **Real-time Self Management**: Live display of current queue status
 - **Multi-Counter Support**: Multiple service counters with different service types
 - **Ticket Expiration**: Time-limited tickets to prevent hoarding
 - **Verification System**: ID verification at service counter
